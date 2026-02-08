@@ -40,7 +40,7 @@ export default function DashboardPage() {
       <Sidebar />
 
       <div className="flex-1">
-        <Header />
+        <Header title="Dashboard" showSearch />
         <main className="p-6" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
           <h2 
             className="text-2xl font-bold mb-6"
@@ -204,6 +204,7 @@ export default function DashboardPage() {
               <a
                 href="/notes"
                 className="btn-primary"
+                data-shortcut="create-note"
                 style={{
                   fontSize: 'var(--font-size-base)',
                   padding: 'var(--space-sm) var(--space-lg)'

@@ -14,7 +14,16 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    
+  }, []);
+
+  // Close mobile menu when Escape is pressed (keyboard shortcut)
+  useEffect(() => {
+    const handleEsc = () => setMobileMenuOpen(false);
+    window.addEventListener("shortcut-esc", handleEsc);
+    return () => window.removeEventListener("shortcut-esc", handleEsc);
+  }, []);
+
+  useEffect(() => {
     // Handle scroll to show/hide scroll to top button and progress
     const handleScroll = () => {
       const scrollTop = window.scrollY;
@@ -300,26 +309,29 @@ export default function Home() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="btn-icon md:hidden flex-shrink-0 flex items-center justify-center"
+                className="btn-icon md:hidden flex-shrink-0 flex items-center justify-center transition-colors duration-200 hover:bg-blue-500/10 hover:text-[var(--color-info)]"
                 style={{ 
                   height: '44px',
                   width: '44px',
-                  flex: '0 0 auto'
+                  flex: '0 0 auto',
+                  color: 'var(--color-text-secondary)'
                 }}
                 aria-label="Toggle menu"
                 aria-expanded={mobileMenuOpen}
               >
               <svg 
-                className="w-6 h-6 transition-transform duration-300" 
+                className="w-6 h-6 transition-transform duration-300 shrink-0" 
                 style={{ transform: mobileMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
                 fill="none" 
                 stroke="currentColor" 
+                strokeWidth={2.25}
                 viewBox="0 0 24 24"
+                aria-hidden
               >
                 {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 )}
               </svg>
               </button>

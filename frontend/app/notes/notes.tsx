@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import { SkeletonList } from "@/components/Skeleton";
@@ -57,12 +58,16 @@ export default function NotesPage() {
     <div className="flex">
       <Sidebar />
 
+      <div className="flex-1 flex flex-col">
+        <Header title="Notes" showSearch />
       <main className="flex-1 p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>Notes</h1>
           <button
+            type="button"
             onClick={handleCreateNote}
             className="btn-primary"
+            data-shortcut="create-note"
             style={{
               fontSize: "var(--font-size-sm)",
               padding: "var(--space-sm) var(--space-md)",
@@ -169,6 +174,7 @@ export default function NotesPage() {
           </ul>
         )}
       </main>
+      </div>
     </div>
   );
 }
