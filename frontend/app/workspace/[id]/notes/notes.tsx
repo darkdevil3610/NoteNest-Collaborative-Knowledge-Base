@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { io, Socket } from "socket.io-client";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import EmptyState from "@/components/EmptyState";
@@ -35,6 +36,12 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
   const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [activeUsers, setActiveUsers] = useState<any[]>([]);
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
   // Load notes from API
@@ -70,6 +77,76 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
     window.addEventListener("shortcut-esc", handleEsc);
     return () => window.removeEventListener("shortcut-esc", handleEsc);
   }, [viewingNote]);
+
+  // Socket connection for real-time collaboration
+  useEffect(() => {
+    if (viewingNote) {
+      const newSocket = io("http://localhost:5001", {
+        auth: { token: "current-user-id" }, // TODO: get actual token
+      });
+      setSocket(newSocket);
+
+      newSocket.on("connect", () => {
+        console.log("Connected to server");
+        newSocket.emit("join-note", { noteId: viewingNote._id, workspaceId });
+      });
+
+      newSocket.on("active-users", (users) => {
+        setActiveUsers(users);
+      });
+
+      newSocket.on("user-joined", (data) => {
+        setActiveUsers((prev) => [...prev, data]);
+      });
+
+      newSocket.on("user-left", (data) => {
+        setActiveUsers((prev) => prev.filter((u) => u._id !== data.userId));
+      });
+
+      newSocket.on("note-updated", (data) => {
+        if (data.noteId === viewingNote._id) {
+          setViewingNote((prev) => prev ? { ...prev, title: data.title, content: data.content } : null);
+          setNotes((prev) => prev.map((note) => (note._id === data.noteId ? { ...note, title: data.title, content: data.content } : note)));
+        }
+      });
+
+      return () => {
+        newSocket.disconnect();
+        setSocket(null);
+        setActiveUsers([]);
+      };
+    }
+  }, [viewingNote, workspaceId]);
+
+  const handleEditNote = () => {
+    if (viewingNote) {
+      setEditingNote(viewingNote);
+      setEditTitle(viewingNote.title);
+      setEditContent(viewingNote.content);
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingNote) return;
+    setIsSaving(true);
+    try {
+      await handleUpdateNote(editingNote._id, editTitle, editContent);
+      if (socket) {
+        socket.emit("update-note", { noteId: editingNote._id, title: editTitle, content: editContent });
+      }
+      setEditingNote(null);
+    } catch (error) {
+      setActionError("Failed to save note");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingNote(null);
+    setEditTitle("");
+    setEditContent("");
+  };
 
   const retryLoad = () => {
     setLoadError(null);
@@ -545,6 +622,11 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
                 {viewingNote.title}
               </h2>
               <div className="absolute top-3 right-3 flex gap-2">
+                {activeUsers.length > 0 && (
+                  <div className="text-xs text-gray-500">
+                    {activeUsers.length} user{activeUsers.length > 1 ? 's' : ''} editing
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowVersionHistory(true)}
@@ -570,17 +652,83 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
               </div>
             </div>
             <div className="p-6 overflow-y-auto flex-1 min-h-0">
-              {viewingNote.content ? (
-                <p
-                  className="whitespace-pre-wrap text-sm leading-relaxed"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  {viewingNote.content}
-                </p>
+              {editingNote ? (
+                <div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2" style={{ color: "var(--color-text-primary)" }}>
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-offset-1"
+                      style={{
+                        borderColor: "var(--color-border-light)",
+                        color: "var(--color-text-primary)",
+                        fontSize: "var(--font-size-base)",
+                      }}
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2" style={{ color: "var(--color-text-primary)" }}>
+                      Content
+                    </label>
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      rows={10}
+                      className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-offset-1 resize-y"
+                      style={{
+                        borderColor: "var(--color-border-light)",
+                        color: "var(--color-text-primary)",
+                        fontSize: "var(--font-size-base)",
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="btn-secondary"
+                      style={{ fontSize: "var(--font-size-sm)", padding: "var(--space-sm) var(--space-md)" }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveNote}
+                      className="btn-primary"
+                      style={{ fontSize: "var(--font-size-sm)", padding: "var(--space-sm) var(--space-md)" }}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                  No content yet.
-                </p>
+                <div>
+                  {viewingNote.content ? (
+                    <p
+                      className="whitespace-pre-wrap text-sm leading-relaxed mb-4"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      {viewingNote.content}
+                    </p>
+                  ) : (
+                    <p className="text-sm mb-4" style={{ color: "var(--color-text-muted)" }}>
+                      No content yet.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleEditNote}
+                    className="btn-primary"
+                    style={{ fontSize: "var(--font-size-sm)", padding: "var(--space-sm) var(--space-md)" }}
+                  >
+                    Edit Note
+                  </button>
+                </div>
               )}
             </div>
           </div>
