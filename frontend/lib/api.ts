@@ -35,6 +35,23 @@ export interface Note {
   updatedAt: string;
 }
 
+export interface NoteVersion {
+  _id: string;
+  noteId: string;
+  versionNumber: number;
+  contentSnapshot: {
+    title: string;
+    content: string;
+  };
+  author: string;
+  timestamp: string;
+  metadata?: {
+    reason?: string;
+    source?: string;
+  };
+  workspaceId: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -141,6 +158,18 @@ class ApiService {
 
   async getUser(id: string): Promise<User> {
     return this.request(`/api/users/${id}`);
+  }
+
+  // Note Versions
+  async getNoteVersions(noteId: string): Promise<NoteVersion[]> {
+    return this.request(`/api/notes/${noteId}/versions`);
+  }
+
+  async restoreNoteVersion(noteId: string, versionNumber: number, authorId: string): Promise<{ note: Note; newVersion: NoteVersion }> {
+    return this.request(`/api/notes/${noteId}/restore`, {
+      method: 'POST',
+      body: JSON.stringify({ versionNumber, authorId }),
+    });
   }
 }
 

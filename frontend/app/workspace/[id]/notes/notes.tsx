@@ -9,44 +9,10 @@ import ErrorState from "@/components/ErrorState";
 import { SkeletonList } from "@/components/Skeleton";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { apiService, Note } from "@/lib/api";
+import VersionHistoryModal from "@/components/VersionHistoryModal";
 
-const STORAGE_KEY_PREFIX = "notenest-notes-";
 const TITLE_MAX_LENGTH = 200;
-
-interface Note {
-  id: number;
-  title: string;
-  content?: string;
-}
-
-function getStorageKey(workspaceId: string): string {
-  return `${STORAGE_KEY_PREFIX}${workspaceId}`;
-}
-
-function loadNotesFromStorage(workspaceId: string): Note[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(getStorageKey(workspaceId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (n): n is Note =>
-        n != null && typeof n === "object" && typeof n.id === "number" && typeof n.title === "string"
-    );
-  } catch {
-    return [];
-  }
-}
-
-function saveNotesToStorage(workspaceId: string, notes: Note[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(getStorageKey(workspaceId), JSON.stringify(notes));
-  } catch {
-    // ignore
-  }
-}
 
 const CREATE_RESTRICTED_TITLE = "You need Editor or Admin role to create notes.";
 const DELETE_RESTRICTED_TITLE = "You need Editor or Admin role to delete notes.";
@@ -60,7 +26,7 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Create note modal (placeholder flow – local state only)
+  // Create note modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createTitle, setCreateTitle] = useState("");
   const [createContent, setCreateContent] = useState("");
@@ -68,31 +34,24 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
   const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Load notes from localStorage (or seed data) and persist on change
+  // Load notes from API
   useEffect(() => {
-    const stored = loadNotesFromStorage(workspaceId);
-    const timer = setTimeout(() => {
-      setNotes(
-        stored.length > 0
-          ? stored
-          : [
-              { id: 1, title: "Project Overview", content: "A high-level overview of the project." },
-              { id: 2, title: "Meeting Notes", content: "Key points from the last team sync." },
-            ]
-      );
-      setLoadError(null);
-      setIsLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    const loadNotes = async () => {
+      try {
+        const fetchedNotes = await apiService.getNotesForWorkspace(workspaceId);
+        setNotes(fetchedNotes);
+        setLoadError(null);
+      } catch (error) {
+        setLoadError("Failed to load notes");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadNotes();
   }, [workspaceId]);
-
-  useEffect(() => {
-    if (!isLoading && notes.length >= 0) {
-      saveNotesToStorage(workspaceId, notes);
-    }
-  }, [notes, isLoading, workspaceId]);
 
   // Open create modal when landing from "Create Your First Note" (e.g. /notes?new=1) — only if allowed
   useEffect(() => {
@@ -115,18 +74,18 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
   const retryLoad = () => {
     setLoadError(null);
     setIsLoading(true);
-    setTimeout(() => {
-      const stored = loadNotesFromStorage(workspaceId);
-      setNotes(
-        stored.length > 0
-          ? stored
-          : [
-              { id: 1, title: "Project Overview", content: "A high-level overview of the project." },
-              { id: 2, title: "Meeting Notes", content: "Key points from the last team sync." },
-            ]
-      );
-      setIsLoading(false);
-    }, 600);
+    const loadNotes = async () => {
+      try {
+        const fetchedNotes = await apiService.getNotesForWorkspace(workspaceId);
+        setNotes(fetchedNotes);
+        setLoadError(null);
+      } catch (error) {
+        setLoadError("Failed to load notes");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadNotes();
   };
 
   const handleCreateNote = useCallback(() => {
@@ -156,7 +115,7 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
   }, [showCreateModal, handleCloseCreateModal]);
 
   const handleSubmitCreate = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
       const title = createTitle.trim();
       if (!title) {
@@ -169,27 +128,48 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
       }
       setCreateTitleError("");
       setIsSubmittingCreate(true);
-      const newNote: Note = {
-        id: Date.now(),
-        title,
-        content: createContent.trim() || undefined,
-      };
-      setNotes((prev) => [...prev, newNote]);
-      setCreateSuccessMessage("Note created");
-      setShowCreateModal(false);
-      setCreateTitle("");
-      setCreateContent("");
-      setIsSubmittingCreate(false);
-      createButtonRef.current?.focus();
-      setTimeout(() => setCreateSuccessMessage(null), 2000);
+      try {
+        const newNote = await apiService.createNote(title, createContent.trim(), workspaceId, "current-user-id"); // TODO: get current user ID
+        setNotes((prev) => [...prev, newNote]);
+        setCreateSuccessMessage("Note created");
+        setShowCreateModal(false);
+        setCreateTitle("");
+        setCreateContent("");
+        createButtonRef.current?.focus();
+        setTimeout(() => setCreateSuccessMessage(null), 2000);
+      } catch (error) {
+        setActionError("Failed to create note");
+      } finally {
+        setIsSubmittingCreate(false);
+      }
     },
-    [createTitle, createContent]
+    [createTitle, createContent, workspaceId]
   );
 
-  const handleDeleteNote = (id: number) => {
+  const handleUpdateNote = useCallback(
+    async (noteId: string, title: string, content: string) => {
+      try {
+        const updatedNote = await apiService.updateNote(noteId, title, content, "current-user-id"); // TODO: get current user ID
+        setNotes((prev) => prev.map((note) => (note._id === noteId ? updatedNote : note)));
+        if (viewingNote?._id === noteId) {
+          setViewingNote(updatedNote);
+        }
+      } catch (error) {
+        setActionError("Failed to update note");
+      }
+    },
+    [viewingNote]
+  );
+
+  const handleDeleteNote = async (id: string) => {
     setActionError(null);
-    if (viewingNote?.id === id) setViewingNote(null);
-    setNotes(notes.filter((note) => note.id !== id));
+    if (viewingNote?._id === id) setViewingNote(null);
+    try {
+      await apiService.deleteNote(id, "current-user-id"); // TODO: get current user ID
+      setNotes(notes.filter((note) => note._id !== id));
+    } catch (error) {
+      setActionError("Failed to delete note");
+    }
   };
 
   return (
@@ -341,7 +321,7 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
           <ul className="state-content-enter space-y-3">
             {notes.map((note, index) => (
               <li
-                key={note.id}
+                key={note._id}
                 className="animate-fade-in-up rounded-xl border flex items-stretch gap-4 group hover-lift overflow-hidden"
                 style={{
                   background: "var(--color-background)",
@@ -387,7 +367,7 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteNote(note.id);
+                        handleDeleteNote(note._id);
                       }}
                       className="btn-icon rounded-lg"
                       style={{
@@ -564,16 +544,30 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
               >
                 {viewingNote.title}
               </h2>
-              <button
-                type="button"
-                onClick={() => setViewingNote(null)}
-                className="btn-icon absolute top-3 right-3"
-                aria-label="Close"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="absolute top-3 right-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowVersionHistory(true)}
+                  className="btn-secondary text-xs"
+                  style={{ padding: "var(--space-xs) var(--space-sm)" }}
+                  aria-label="View version history"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  History
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingNote(null)}
+                  className="btn-icon"
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div className="p-6 overflow-y-auto flex-1 min-h-0">
               {viewingNote.content ? (
@@ -591,6 +585,20 @@ export default function WorkspaceNotesPage({ workspaceId }: { workspaceId: strin
             </div>
           </div>
         </div>
+      )}
+
+      {/* Version History Modal */}
+      {showVersionHistory && viewingNote && (
+        <VersionHistoryModal
+          noteId={viewingNote._id}
+          currentNote={viewingNote}
+          onClose={() => setShowVersionHistory(false)}
+          onNoteRestored={(restoredNote) => {
+            setNotes((prev) => prev.map((note) => (note._id === restoredNote._id ? restoredNote : note)));
+            setViewingNote(restoredNote);
+            setShowVersionHistory(false);
+          }}
+        />
       )}
     </div>
   );

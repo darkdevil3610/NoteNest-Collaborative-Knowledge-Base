@@ -429,7 +429,7 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full" style={{ maxWidth: '1000px' }}>
-                <button onClick={() => handleNavigation('/notes?new=1', 'create-note')} disabled={isLoading('create-note')} aria-busy={isLoading('create-note')} className={`btn-primary group flex items-center justify-center`} style={{ fontSize: 'clamp(1rem, 2.2vw, 1.25rem)', padding: 'clamp(1.125rem, 3.2vw, 1.5rem) clamp(2.25rem, 6.5vw, 3rem)', minHeight: '60px', minWidth: '260px', borderRadius: 12 }} aria-label={isLoading('create-note') ? 'Loading...' : 'Create your first note'}>
+                <button onClick={() => handleNavigation('/dashboard', 'create-note')} disabled={isLoading('create-note')} aria-busy={isLoading('create-note')} className={`btn-primary group flex items-center justify-center`} style={{ fontSize: 'clamp(1rem, 2.2vw, 1.25rem)', padding: 'clamp(1.125rem, 3.2vw, 1.5rem) clamp(2.25rem, 6.5vw, 3rem)', minHeight: '60px', minWidth: '260px', borderRadius: 12 }} aria-label={isLoading('create-note') ? 'Loading...' : 'Create your first note'}>
                   <span className="relative z-10">Create Your First Note</span>
                 </button>
 
