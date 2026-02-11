@@ -79,7 +79,6 @@ export default function LoginPage() {
     if (email === "error@example.com") {
       setErrors({ general: "Invalid email or password. Please try again." });
       setIsSubmitting(false);
-      return;
     }
 
     // Determine role based on email (demo purposes)
