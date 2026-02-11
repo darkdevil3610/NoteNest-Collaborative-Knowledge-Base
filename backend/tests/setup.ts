@@ -1,5 +1,11 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Set test environment variables
+process.env.JWT_SECRET = 'test-jwt-secret';
 
 let mongoServer: MongoMemoryServer;
 
