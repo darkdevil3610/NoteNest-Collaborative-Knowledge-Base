@@ -1,62 +1,32 @@
+import {
+  AuditLog,
+  Workspace,
+  Note,
+  NoteVersion,
+  User,
+  CreateWorkspaceRequest,
+  AddMemberRequest,
+  UpdateMemberRoleRequest,
+  CreateNoteRequest,
+  UpdateNoteRequest,
+  DeleteNoteRequest,
+  RestoreNoteRequest,
+  RegisterRequest,
+  LoginRequest,
+  RegisterResponse,
+  LoginResponse,
+  UserProfileResponse,
+  NotesResponse,
+  NoteResponse,
+  NoteVersionsResponse,
+  RestoreNoteResponse,
+  WorkspacesResponse,
+  WorkspaceResponse,
+  AuditLogsResponse,
+  ErrorResponse,
+} from '../../shared/types';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
-export interface AuditLog {
-  _id: string;
-  action: string;
-  actor: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  workspaceId: string;
-  target: string;
-  targetType: string;
-  timestamp: string;
-  metadata: Record<string, any>;
-}
-
-export interface Workspace {
-  _id: string;
-  name: string;
-  description?: string;
-  owner: string;
-  members: { userId: string; role: 'admin' | 'editor' | 'viewer' }[];
-  createdAt: string;
-}
-
-export interface Note {
-  _id: string;
-  title: string;
-  content: string;
-  workspaceId: string;
-  author: string;
-  tags?: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface NoteVersion {
-  _id: string;
-  noteId: string;
-  versionNumber: number;
-  contentSnapshot: {
-    title: string;
-    content: string;
-  };
-  author: string;
-  timestamp: string;
-  metadata?: {
-    reason?: string;
-    source?: string;
-  };
-  workspaceId: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-}
 
 class ApiService {
   private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
@@ -84,17 +54,17 @@ class ApiService {
     return this.request(`/api/workspaces/user/${userId}`);
   }
 
-  async createWorkspace(name: string, description: string, ownerId: string): Promise<Workspace> {
+  async createWorkspace(data: CreateWorkspaceRequest): Promise<Workspace> {
     return this.request('/api/workspaces', {
       method: 'POST',
-      body: JSON.stringify({ name, description, ownerId }),
+      body: JSON.stringify(data),
     });
   }
 
-  async addMemberToWorkspace(workspaceId: string, userId: string, role: string, addedBy: string): Promise<Workspace> {
+  async addMemberToWorkspace(workspaceId: string, data: AddMemberRequest): Promise<Workspace> {
     return this.request(`/api/workspaces/${workspaceId}/members`, {
       method: 'POST',
-      body: JSON.stringify({ userId, role, addedBy }),
+      body: JSON.stringify(data),
     });
   }
 
@@ -104,10 +74,10 @@ class ApiService {
     });
   }
 
-  async updateMemberRole(workspaceId: string, userId: string, role: string): Promise<Workspace> {
+  async updateMemberRole(workspaceId: string, userId: string, data: UpdateMemberRoleRequest): Promise<Workspace> {
     return this.request(`/api/workspaces/${workspaceId}/members/${userId}`, {
       method: 'PUT',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify(data),
     });
   }
 
@@ -120,24 +90,24 @@ class ApiService {
     return this.request(`/api/notes/workspace/${workspaceId}`);
   }
 
-  async createNote(title: string, content: string, workspaceId: string, authorId: string): Promise<Note> {
+  async createNote(data: CreateNoteRequest): Promise<Note> {
     return this.request('/api/notes', {
       method: 'POST',
-      body: JSON.stringify({ title, content, workspaceId, authorId }),
+      body: JSON.stringify(data),
     });
   }
 
-  async updateNote(id: string, title: string, content: string, authorId: string): Promise<Note> {
+  async updateNote(id: string, data: UpdateNoteRequest): Promise<Note> {
     return this.request(`/api/notes/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ title, content, authorId }),
+      body: JSON.stringify(data),
     });
   }
 
-  async deleteNote(id: string, authorId: string): Promise<void> {
+  async deleteNote(id: string, data: DeleteNoteRequest): Promise<void> {
     return this.request(`/api/notes/${id}`, {
       method: 'DELETE',
-      body: JSON.stringify({ authorId }),
+      body: JSON.stringify(data),
     });
   }
 
@@ -165,10 +135,10 @@ class ApiService {
     return this.request(`/api/notes/${noteId}/versions`);
   }
 
-  async restoreNoteVersion(noteId: string, versionNumber: number, authorId: string): Promise<{ note: Note; newVersion: NoteVersion }> {
+  async restoreNoteVersion(noteId: string, data: RestoreNoteRequest): Promise<RestoreNoteResponse> {
     return this.request(`/api/notes/${noteId}/restore`, {
       method: 'POST',
-      body: JSON.stringify({ versionNumber, authorId }),
+      body: JSON.stringify(data),
     });
   }
 }

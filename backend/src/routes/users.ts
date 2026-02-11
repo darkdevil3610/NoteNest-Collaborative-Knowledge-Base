@@ -3,6 +3,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { AuditService } from '../services/auditService';
+import {
+  RegisterRequest,
+  RegisterResponse,
+  LoginRequest,
+  LoginResponse,
+  UserProfileResponse,
+  ErrorResponse,
+} from '../../../shared/types';
 
 const router = express.Router();
 
@@ -31,12 +39,13 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // Login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response<LoginResponse | ErrorResponse>) => {
   try {
-    const { email, password } = req.body;
+    const { email, password }: LoginRequest = req.body;
     const user = await User.findOne({ email });
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      const errorResponse: ErrorResponse = { error: 'Invalid credentials' };
+      return res.status(401).json(errorResponse);
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
@@ -51,9 +60,11 @@ router.post('/login', async (req: Request, res: Response) => {
       {}
     );
 
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+    const response: LoginResponse = { token, user: { id: user._id.toString(), name: user.name, email: user.email } };
+    res.json(response);
   } catch (error) {
-    res.status(500).json({ error: 'Login failed' });
+    const errorResponse: ErrorResponse = { error: 'Login failed' };
+    res.status(500).json(errorResponse);
   }
 });
 
