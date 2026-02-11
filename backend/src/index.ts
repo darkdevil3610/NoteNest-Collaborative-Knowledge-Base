@@ -40,8 +40,8 @@ mongoose.connect(MONGO_URI)
 // Initialize Redis cache
 initializeCache().then(() => {
   console.log("🔄 Redis cache initialized");
-}).catch(err => {
-  console.warn("⚠️  Redis cache initialization failed, continuing without cache:", err.message);
+}).catch((err: unknown) => {
+  console.warn("⚠️  Redis cache initialization failed, continuing without cache:", err instanceof Error ? err.message : String(err));
 });
 
 // Routes

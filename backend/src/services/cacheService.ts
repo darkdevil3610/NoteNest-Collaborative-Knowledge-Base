@@ -19,11 +19,11 @@ export class CacheService {
       }
 
       this.client = new Redis(redisUrl, {
-        retryDelayOnFailover: 100,
         maxRetriesPerRequest: 3,
         lazyConnect: true,
         connectTimeout: 5000, // 5 second timeout
         commandTimeout: 3000, // 3 second command timeout
+        enableReadyCheck: false,
       });
 
       // Test connection with timeout
@@ -49,7 +49,7 @@ export class CacheService {
     try {
       const data = await this.client.get(key);
       return data ? JSON.parse(data) : null;
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Cache get error:', error instanceof Error ? error.message : String(error));
       return null;
     }
@@ -64,7 +64,7 @@ export class CacheService {
       const ttl = ttlSeconds || defaultTtl;
 
       await this.client.setex(key, ttl, serializedValue);
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Cache set error:', error instanceof Error ? error.message : String(error));
     }
   }
@@ -74,7 +74,7 @@ export class CacheService {
 
     try {
       await this.client.del(key);
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('Cache delete error:', error instanceof Error ? error.message : String(error));
     }
   }
@@ -98,8 +98,8 @@ export class CacheService {
     try {
       const result = await this.client.exists(key);
       return result === 1;
-    } catch (error) {
-      console.warn('Cache exists error:', error.message);
+    } catch (error: unknown) {
+      console.warn('Cache exists error:', error instanceof Error ? error.message : String(error));
       return false;
     }
   }
@@ -128,8 +128,8 @@ export class CacheService {
         connected_clients: this.client.status === 'ready',
         info: info
       };
-    } catch (error) {
-      return { enabled: false, error: error.message };
+    } catch (error: unknown) {
+      return { enabled: false, error: error instanceof Error ? error.message : String(error) };
     }
   }
 

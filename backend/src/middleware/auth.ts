@@ -49,13 +49,41 @@ export const resolvePermissions = async (userId: string, resourcePath: string): 
 
   // Try to get from cache first
   if (cacheService) {
-    const cachedPermissions = await cacheService.get(cacheKey);
+    const cachedPermissions = await cacheService.get<string[]>(cacheKey);
     if (cachedPermissions) {
       return cachedPermissions;
     }
   }
 
   const permissions: string[] = [];
+
+  // Check workspace membership permissions for workspace-related resources
+  if (resourcePath.includes('/')) {
+    const workspaceId = resourcePath.split('/')[0];
+    try {
+      const workspace = await require('../models/Workspace').default.findById(workspaceId);
+      if (workspace) {
+        const member = workspace.members.find((m: any) => m.userId === userId);
+        if (member) {
+          // Grant permissions based on workspace role
+          switch (member.role) {
+            case 'admin':
+              permissions.push('read', 'write', 'delete', 'manage_groups', 'manage_permissions');
+              break;
+            case 'editor':
+              permissions.push('read', 'write');
+              break;
+            case 'viewer':
+            default:
+              permissions.push('read');
+              break;
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore workspace lookup errors
+    }
+  }
 
   // Get direct user permissions
   const userPerms = await Permission.find({

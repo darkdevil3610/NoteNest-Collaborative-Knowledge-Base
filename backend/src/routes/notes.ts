@@ -6,7 +6,7 @@ import { PersistenceManager } from '../persistence';
 import { AuditService } from '../services/auditService';
 import { authenticateToken, validateAccessLink, requirePermission, AuthRequest } from '../middleware/auth';
 import { diff_match_patch } from 'diff-match-patch';
-import { getCacheService, CacheService } from '../services/cacheService';
+import { getCacheService, CacheKeys } from '../services/cacheService';
 
 const router = express.Router();
 
