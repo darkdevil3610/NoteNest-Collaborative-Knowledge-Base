@@ -25,7 +25,7 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
-const app = express();
+const app = express(); // Initialize express
 
 app.use(cors());
 app.use(express.json());
