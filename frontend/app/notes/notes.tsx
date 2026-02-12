@@ -399,16 +399,27 @@ export default function NotesPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setViewingNote(note)}
-                    className="flex-1 min-w-0 py-4 pr-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-lg"
-                    style={{ "--tw-ring-color": "var(--color-info)" } as React.CSSProperties}
-                    aria-label={`View note: ${note.title}`}
-                  >
-                    <span className="font-semibold block truncate" style={{ color: "var(--color-text-primary)", fontSize: "var(--font-size-base)" }}>
-                      {note.title}
-                    </span>
+              <button
+  type="button"
+  onClick={() => setViewingNote(note)}
+  className="flex-1 min-w-0 py-4 pr-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-lg"
+  style={{ "--tw-ring-color": "var(--color-info)" } as React.CSSProperties}
+  aria-label={`View note: ${note.title}`}
+  title={note.title}   // ✅ ADD THIS LINE
+>
+
+
+             <span
+  className="font-semibold block truncate"
+  style={{
+    color: "var(--color-text-primary)",
+    fontSize: "var(--font-size-base)",
+  }}
+>
+  {note.title}
+</span>
+
+
                     {note.content ? (
                       <span
                         className="text-sm block truncate mt-1"
