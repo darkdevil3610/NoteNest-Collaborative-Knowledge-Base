@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import Note from '@backend/models/Note';
 import NoteVersion from '@backend/models/NoteVersion';
 import User from '@backend/models/User';
+import { retryIdempotent } from '@backend/utils/retry';
+import { metrics } from '@backend/utils/metrics';
+import logger from '@backend/utils/logger';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -37,22 +40,34 @@ export default function setupSocketHandlers(io: SocketIOServer) {
     socket.on("join-note", async (data: { noteId: string; workspaceId: string }) => {
       const { noteId, workspaceId } = data;
 
-      // Validate workspace access via main API
+      // Validate workspace access via main API with retry and timeout
       try {
-        const response = await fetch(`${process.env.MAIN_API_URL}/api/workspaces/${workspaceId}/validate-access`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${socket.handshake.auth.token}`
-          },
-          body: JSON.stringify({ userId: socket.userId })
-        });
+        await retryIdempotent(async () => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-        if (!response.ok) {
-          socket.emit("error", { message: "Access denied" });
-          return;
-        }
+          const response = await fetch(`${process.env.MAIN_API_URL}/api/workspaces/${workspaceId}/validate-access`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${socket.handshake.auth.token}`
+            },
+            body: JSON.stringify({ userId: socket.userId }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        });
       } catch (error) {
+        metrics.increment('httpRequestFailures');
+        if (error.name === 'AbortError') {
+          metrics.increment('httpRequestTimeouts');
+          logger.warn('Workspace validation timeout');
+        }
         socket.emit("error", { message: "Validation failed" });
         return;
       }
@@ -107,32 +122,44 @@ export default function setupSocketHandlers(io: SocketIOServer) {
     socket.on("update-note", async (data: { noteId: string; title: string; content: string; expectedVersion?: number }) => {
       const { noteId, title, content, expectedVersion } = data;
 
-      // Validate note and permissions via main API with OCC
+      // Validate note and permissions via main API with OCC, retry, and timeout
       try {
-        const response = await fetch(`${process.env.MAIN_API_URL}/api/notes/${noteId}/validate-update`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${socket.handshake.auth.token}`
-          },
-          body: JSON.stringify({ userId: socket.userId, expectedVersion })
-        });
+        await retryIdempotent(async () => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-        if (!response.ok) {
-          const errorData = await response.json() as any;
-          if (response.status === 409) {
-            // Conflict detected
-            socket.emit('note-update-conflict', {
-              noteId,
-              conflict: errorData,
-              clientChanges: { title, content }
-            });
-            return;
+          const response = await fetch(`${process.env.MAIN_API_URL}/api/notes/${noteId}/validate-update`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${socket.handshake.auth.token}`
+            },
+            body: JSON.stringify({ userId: socket.userId, expectedVersion }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errorData = await response.json() as any;
+            if (response.status === 409) {
+              // Conflict detected
+              socket.emit('note-update-conflict', {
+                noteId,
+                conflict: errorData,
+                clientChanges: { title, content }
+              });
+              return;
+            }
+            throw new Error(errorData.error || "Permission denied");
           }
-          socket.emit("error", { message: errorData.error || "Permission denied" });
-          return;
-        }
+        });
       } catch (error) {
+        metrics.increment('httpRequestFailures');
+        if (error.name === 'AbortError') {
+          metrics.increment('httpRequestTimeouts');
+          logger.warn('Note validation timeout');
+        }
         socket.emit("error", { message: "Validation failed" });
         return;
       }

@@ -50,8 +50,9 @@ export class EventBus {
       try {
         await listener(payload);
       } catch (error) {
+        metrics.increment('eventBusFailures');
         logger.error(`Error in event listener for ${eventName}:`, error);
-        // Continue with other listeners even if one fails
+        // Continue with other listeners even if one fails (fallback)
       }
     });
 

@@ -160,6 +160,16 @@ app.get("/health", (_req: Request, res: Response) => {
   });
 });
 
+app.get("/metrics", (_req: Request, res: Response) => {
+  const circuitBreaker = getCacheService()?.['circuitBreaker']; // Access private property for demo
+  const metricsData = metrics.getMetrics();
+  res.json({
+    ...metricsData,
+    circuitBreakerState: circuitBreaker?.getState() || 'N/A',
+    circuitBreakerFailureCount: circuitBreaker?.getFailureCount() || 0,
+  });
+});
+
 app.get("/notes", async (_req: Request, res: Response) => {
   const cacheService = getCacheService();
   const cacheKey = 'sample_notes';

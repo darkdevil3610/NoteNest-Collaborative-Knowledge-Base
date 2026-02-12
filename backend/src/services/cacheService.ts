@@ -1,11 +1,21 @@
 import Redis from 'ioredis';
+import { CircuitBreaker, createCircuitBreaker, CircuitState } from '../utils/circuitBreaker';
+import { retryIdempotent } from '../utils/retry';
+import { metrics } from '../utils/metrics';
+import logger from '../utils/logger';
 
 export class CacheService {
   private client: Redis | null = null;
   private isEnabled: boolean = false;
+  private circuitBreaker: CircuitBreaker;
 
   constructor() {
-    // Don't initialize in constructor - do it asynchronously later
+    // Initialize circuit breaker with default config
+    this.circuitBreaker = createCircuitBreaker('redis-cache', {
+      failureThreshold: parseInt(process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD || '5'),
+      resetTimeout: parseInt(process.env.CIRCUIT_BREAKER_RESET_TIMEOUT || '60000'), // 1 minute
+      monitoringPeriod: parseInt(process.env.CIRCUIT_BREAKER_MONITORING_PERIOD || '60000'),
+    });
   }
 
   async initialize(): Promise<void> {
@@ -47,10 +57,21 @@ export class CacheService {
     if (!this.isEnabled || !this.client) return null;
 
     try {
-      const data = await this.client.get(key);
+      const data = await this.circuitBreaker.call(async () => {
+        return await retryIdempotent(async () => {
+          const result = await this.client!.get(key);
+          if (result) {
+            metrics.increment('cacheHits');
+          } else {
+            metrics.increment('cacheMisses');
+          }
+          return result;
+        });
+      });
       return data ? JSON.parse(data) : null;
     } catch (error: unknown) {
-      console.warn('Cache get error:', error instanceof Error ? error.message : String(error));
+      metrics.increment('cacheFailures');
+      logger.warn('Cache get error:', error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -58,14 +79,25 @@ export class CacheService {
   async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
     if (!this.isEnabled || !this.client) return;
 
+    // If circuit breaker is open, skip caching (fallback)
+    if (this.circuitBreaker.getState() === CircuitState.OPEN) {
+      logger.debug('Circuit breaker open, skipping cache set');
+      return;
+    }
+
     try {
       const serializedValue = JSON.stringify(value);
       const defaultTtl = parseInt(process.env.CACHE_TTL || '3600'); // 1 hour default
       const ttl = ttlSeconds || defaultTtl;
 
-      await this.client.setex(key, ttl, serializedValue);
+      await this.circuitBreaker.call(async () => {
+        return await retryIdempotent(async () => {
+          await this.client!.setex(key, ttl, serializedValue);
+        });
+      });
     } catch (error: unknown) {
-      console.warn('Cache set error:', error instanceof Error ? error.message : String(error));
+      metrics.increment('cacheFailures');
+      logger.warn('Cache set error:', error instanceof Error ? error.message : String(error));
     }
   }
 

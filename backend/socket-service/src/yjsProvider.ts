@@ -29,14 +29,20 @@ export class YjsProvider {
 
         // Validate access via main API
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
           const response = await fetch(`${process.env.MAIN_API_URL}/api/workspaces/${workspaceId}/validate-access`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${socket.handshake.auth.token}`
             },
-            body: JSON.stringify({ userId: socket.userId })
+            body: JSON.stringify({ userId: socket.userId }),
+            signal: controller.signal
           });
+
+          clearTimeout(timeoutId);
 
           if (!response.ok) {
             socket.emit('error', { message: 'Access denied' });
