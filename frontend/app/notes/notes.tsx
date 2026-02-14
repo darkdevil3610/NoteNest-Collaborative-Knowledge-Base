@@ -57,7 +57,7 @@ export default function NotesPage() {
 
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Initial load
+  /* ---------------- Initial Load ---------------- */
   useEffect(() => {
     const stored = loadNotesFromStorage();
     const timer = setTimeout(() => {
@@ -90,6 +90,7 @@ export default function NotesPage() {
     if (!isLoading) saveNotesToStorage(notes);
   }, [notes, isLoading]);
 
+  /* ---------------- Handle ?new=1 ---------------- */
   useEffect(() => {
     if (searchParams.get("new") === "1" && canCreateNote) {
       setShowCreateModal(true);
@@ -97,22 +98,13 @@ export default function NotesPage() {
     }
   }, [searchParams, canCreateNote]);
 
-  // Close view modal on Escape
+  /* ---------------- View modal ESC ---------------- */
   useEffect(() => {
     if (!viewingNote) return;
     const handleEsc = () => setViewingNote(null);
     window.addEventListener("shortcut-esc", handleEsc);
     return () => window.removeEventListener("shortcut-esc", handleEsc);
   }, [viewingNote]);
-
-  const retryLoad = () => {
-    setLoadError(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setNotes(loadNotesFromStorage());
-      setIsLoading(false);
-    }, 600);
-  };
 
   const handleCreateNote = useCallback(() => {
     if (!canCreateNote) return;
@@ -122,6 +114,41 @@ export default function NotesPage() {
     setCreateTitleError("");
     setShowCreateModal(true);
   }, [canCreateNote]);
+
+  /* =================================================
+     ✅ CREATE NOTE KEYBOARD SHORTCUT (FIXED)
+     Only registers if user has permission
+     ================================================= */
+  useEffect(() => {
+    if (!canCreateNote) return;
+
+    const handleCreateShortcut = () => {
+      handleCreateNote();
+    };
+
+    window.addEventListener("shortcut-create-note", handleCreateShortcut);
+
+    return () => {
+      window.removeEventListener("shortcut-create-note", handleCreateShortcut);
+    };
+  }, [canCreateNote, handleCreateNote]);
+
+  const handleCloseCreateModal = useCallback(() => {
+    if (isSubmittingCreate) return;
+    setShowCreateModal(false);
+    setCreateTitle("");
+    setCreateContent("");
+    setCreateTitleError("");
+    createButtonRef.current?.focus();
+  }, [isSubmittingCreate]);
+
+  /* ---------------- Create modal ESC ---------------- */
+  useEffect(() => {
+    if (!showCreateModal) return;
+    const handleEsc = () => handleCloseCreateModal();
+    window.addEventListener("shortcut-esc", handleEsc);
+    return () => window.removeEventListener("shortcut-esc", handleEsc);
+  }, [showCreateModal, handleCloseCreateModal]);
 
   const handleSubmitCreate = useCallback(
     (e: React.FormEvent) => {
@@ -173,6 +200,7 @@ export default function NotesPage() {
                 type="button"
                 onClick={handleCreateNote}
                 className="btn-primary"
+                data-shortcut="create-note"
               >
                 Create Note
               </button>
@@ -210,22 +238,14 @@ export default function NotesPage() {
                     <button
                       type="button"
                       onClick={() => setViewingNote(note)}
-                      title={note.title}
                       className="flex-1 min-w-0 text-left"
-                      aria-label={`View note: ${note.title}`}
                     >
-                      {/* ✅ CONTRAST FIX HERE */}
-                      <h4
-                        className="font-semibold truncate"
-                        style={{ color: "var(--color-text-strong, #111827)" }}
-                      >
+                      <h4 className="font-semibold truncate text-gray-900">
                         {note.title}
                       </h4>
-
                       <p className="text-sm truncate text-gray-600 mt-1">
                         {note.content || "No content"}
                       </p>
-
                       <p className="text-xs mt-1 text-gray-500">
                         Updated {note.updatedAt}
                       </p>
