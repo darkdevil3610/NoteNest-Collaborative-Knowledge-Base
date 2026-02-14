@@ -57,7 +57,7 @@ const Features = () => {
           title="Real-time Collaboration"
           description="Create, organize, and collaborate on documentation in real-time. See cursor movements and edits as they happen."
           icon={<Users className="w-8 h-8 text-blue-600" />}
-          className="md:col-span-2 bg-[#F3F0E6]"
+          className="md:col-span-2 bg-brand-beige"
           illustration={
             <div className="relative h-48 rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm p-4">
               <div className="flex items-center gap-2 mb-3 border-b border-gray-100 pb-2">

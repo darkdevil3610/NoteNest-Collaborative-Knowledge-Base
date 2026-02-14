@@ -36,12 +36,12 @@ const Navbar = () => {
         <Container className={cn(
           "rounded-full flex justify-between items-center transition-all duration-300",
           scrolled
-            ? "bg-[#F3F0E6]/90 backdrop-blur-md shadow-sm border border-black/5 py-3"
+            ? "bg-brand-beige/90 backdrop-blur-md shadow-sm border border-black/5 py-3"
             : "bg-transparent py-3"
         )}>
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 z-50 relative">
-            <span className="text-2xl font-bold font-serif text-[#1A1A1A] tracking-tight">
+            <span className="text-2xl font-bold font-serif text-brand-dark tracking-tight">
               NoteNest
             </span>
           </Link>
@@ -52,7 +52,7 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 href={link.href}
-                className="text-base font-medium text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors"
+                className="text-base font-medium text-brand-dark/80 hover:text-brand-dark transition-colors"
               >
                 {link.name}
               </Link>
@@ -63,7 +63,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center">
             <Link
               href="/login"
-              className="group relative inline-flex items-center justify-center bg-[#1A1A1A] text-white text-sm font-semibold px-6 py-2.5 rounded-full overflow-hidden transition-all hover:bg-black hover:shadow-lg"
+              className="group relative inline-flex items-center justify-center bg-brand-dark text-white text-sm font-semibold px-6 py-2.5 rounded-full overflow-hidden transition-all hover:bg-black hover:shadow-lg"
             >
               <span>Login</span>
               <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />

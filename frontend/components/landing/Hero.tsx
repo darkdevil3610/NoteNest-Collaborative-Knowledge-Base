@@ -18,9 +18,9 @@ const Hero = () => {
       {/* Background Decorative Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         {/* Warm yellow glow top right */}
-        <div className="absolute top-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-[#FFD93D]/20 blur-[120px]" />
+        <div className="absolute top-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-brand-yellow/20 blur-[120px]" />
         {/* Soft orange glow bottom left */}
-        <div className="absolute bottom-[-10%] left-[-10%] w-[30vw] h-[30vw] rounded-full bg-[#FF6B6B]/10 blur-[100px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[30vw] h-[30vw] rounded-full bg-brand-accent/10 blur-[100px]" />
       </div>
 
       <Container>
@@ -33,8 +33,8 @@ const Hero = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="inline-flex items-center space-x-2 bg-white px-4 py-1.5 rounded-full shadow-sm mb-8 border border-black/5"
             >
-              <span className="flex h-2 w-2 rounded-full bg-[#FF6B6B] animate-pulse" />
-              <span className="text-sm font-bold tracking-wide uppercase text-[#1A1A1A]">MIT License • Open Source</span>
+              <span className="flex h-2 w-2 rounded-full bg-brand-accent animate-pulse" />
+              <span className="text-sm font-bold tracking-wide uppercase text-brand-dark">MIT License • Open Source</span>
             </motion.div>
 
             <motion.h1
@@ -48,7 +48,7 @@ const Hero = () => {
               Knowledge Base <br />
               <span className="relative inline-block z-10">
                 for Teams.
-                <svg className="absolute w-[110%] h-4 -bottom-1 -left-2 text-[#FFD93D] -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
+                <svg className="absolute w-[110%] h-4 -bottom-1 -left-2 text-brand-yellow -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
                   <path d="M0 5 Q 50 15 100 5" stroke="currentColor" strokeWidth="12" fill="none" opacity="0.8" />
                 </svg>
               </span>
@@ -58,7 +58,7 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-lg md:text-xl text-[#1A1A1A]/80 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium"
+              className="text-lg md:text-xl text-brand-dark/80 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium"
             >
               NoteNest is an open-source, team-based knowledge base that allows users to create, organize, and collaborate on notes and documentation in real time.
             </motion.p>
@@ -71,7 +71,7 @@ const Hero = () => {
             >
               <Link
                 href="/dashboard"
-                className="group inline-flex items-center justify-center pl-8 pr-2 py-3 text-xl font-bold text-white bg-[#1A1A1A] rounded-full hover:bg-black hover:scale-105 transition-all duration-300 shadow-xl z-20"
+                className="group inline-flex items-center justify-center pl-8 pr-2 py-3 text-xl font-bold text-white bg-brand-dark rounded-full hover:bg-black hover:scale-105 transition-all duration-300 shadow-xl z-20"
               >
                 Start Writing
                 <div className="ml-6 w-14 h-14 bg-white text-black rounded-full flex items-center justify-center group-hover:rotate-45 transition-transform duration-300">
@@ -83,12 +83,12 @@ const Hero = () => {
             <div className="mt-16 flex items-center justify-center lg:justify-start gap-4">
               <div className="flex -space-x-4">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-12 h-12 rounded-full border-4 border-[#F3F0E6] bg-gray-200 flex items-center justify-center text-xs font-bold bg-white text-black shadow-md relative z-0 hover:z-10 hover:scale-110 transition-transform">
+                  <div key={i} className="w-12 h-12 rounded-full border-4 border-brand-beige bg-gray-200 flex items-center justify-center text-xs font-bold bg-white text-black shadow-md relative z-0 hover:z-10 hover:scale-110 transition-transform">
                     <ImageIcon className="w-5 h-5 opacity-50" />
                   </div>
                 ))}
               </div>
-              <p className="text-base font-bold text-[#1A1A1A]">
+              <p className="text-base font-bold text-brand-dark">
                 Trusted by 4,000+ teams
               </p>
             </div>
@@ -103,7 +103,7 @@ const Hero = () => {
               {/* Card 1: Shared to (Top Right) - Desktop Only */}
               <div className="row-start-1 col-start-2 place-self-center hidden lg:block z-20">
                 <FloatingCard
-                  className="w-[18rem] bg-[#FDFBF7] p-6 text-[#1A1A1A]"
+                  className="w-[18rem] bg-[#FDFBF7] p-6 text-brand-dark"
                   rotate={-2}
                   yOffset={-10}
                 >
@@ -116,7 +116,7 @@ const Hero = () => {
                   </div>
                   <h3 className="text-3xl font-serif font-bold mb-4 leading-none">Real-time<br />Collab</h3>
                   <div className="flex gap-2">
-                    <button className="w-10 h-10 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg">+</button>
+                    <button className="w-10 h-10 rounded-full bg-brand-dark text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg">+</button>
                     <button className="w-10 h-10 rounded-full bg-[#EAE8DD] flex items-center justify-center"><ImageIcon className="w-4 h-4 opacity-50" /></button>
                   </div>
                 </FloatingCard>
@@ -128,7 +128,7 @@ const Hero = () => {
                   className="p-0 border-none bg-transparent shadow-none"
                   rotate={0}
                 >
-                  <div className="inline-block px-8 py-4 border-4 border-[#1A1A1A] rounded-[2rem_1rem_2rem_0.5rem] text-2xl font-handwritten font-bold transform -rotate-1 hover:rotate-0 transition-transform cursor-cell bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="inline-block px-8 py-4 border-4 border-brand-dark rounded-[2rem_1rem_2rem_0.5rem] text-2xl font-handwritten font-bold transform -rotate-1 hover:rotate-0 transition-transform cursor-cell bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                     Syncing...
                   </div>
                 </FloatingCard>
@@ -149,13 +149,13 @@ const Hero = () => {
                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">::</div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#FF6B6B] text-[#1A1A1A] p-3 rounded-[1rem] h-32 flex flex-col justify-between">
+                    <div className="bg-brand-accent text-brand-dark p-3 rounded-[1rem] h-32 flex flex-col justify-between">
                       <div className="font-bold text-sm leading-tight">Plan for<br />The Day</div>
-                      <div className="flex items-center gap-1 text-[10px] font-bold"><div className="w-3 h-3 rounded-full bg-[#1A1A1A]/20 flex items-center justify-center">✓</div> Gym</div>
+                      <div className="flex items-center gap-1 text-[10px] font-bold"><div className="w-3 h-3 rounded-full bg-brand-dark/20 flex items-center justify-center">✓</div> Gym</div>
                     </div>
-                    <div className="bg-[#FFD93D] text-[#1A1A1A] p-3 rounded-[1rem] h-32 relative overflow-hidden">
+                    <div className="bg-brand-yellow text-brand-dark p-3 rounded-[1rem] h-32 relative overflow-hidden">
                       <div className="font-bold text-sm mb-1">Ideas</div>
-                      <div className="absolute bottom-0 right-0 w-12 h-12 bg-[#1A1A1A] rounded-tl-[1rem] flex items-center justify-center">
+                      <div className="absolute bottom-0 right-0 w-12 h-12 bg-brand-dark rounded-tl-[1rem] flex items-center justify-center">
                         <ImageIcon className="w-5 h-5 text-white/50" />
                       </div>
                     </div>

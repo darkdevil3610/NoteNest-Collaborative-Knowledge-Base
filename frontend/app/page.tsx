@@ -18,7 +18,7 @@ export default function Home() {
   return (
     // Note: A large block of duplicated legacy JSX code was removed here to fix a syntax error.
     // The previous implementation had inadvertently pasted the entire file content again.
-    <main className="min-h-screen bg-[#F3F0E6] selection:bg-[#FF6B6B]/20">
+    <main className="min-h-screen bg-brand-beige selection:bg-brand-accent/20">
       <Navbar />
       <Hero />
       <Features />

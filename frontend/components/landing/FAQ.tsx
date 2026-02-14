@@ -30,8 +30,8 @@ const FAQItem = ({ item, isOpen, onClick }: { item: any, isOpen: boolean, onClic
         onClick={onClick}
         className="w-full flex items-center justify-between py-6 text-left group hover:opacity-70 transition-opacity"
       >
-        <span className="text-xl font-serif font-bold text-[#1A1A1A]">{item.question}</span>
-        <div className={`w-8 h-8 rounded-full border border-black/10 flex items-center justify-center transition-colors duration-300 ${isOpen ? 'bg-[#1A1A1A] text-white' : 'bg-white text-[#1A1A1A]'}`}>
+        <span className="text-xl font-serif font-bold text-brand-dark">{item.question}</span>
+        <div className={`w-8 h-8 rounded-full border border-black/10 flex items-center justify-center transition-colors duration-300 ${isOpen ? 'bg-brand-dark text-white' : 'bg-white text-brand-dark'}`}>
           {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
         </div>
       </button>
@@ -44,7 +44,7 @@ const FAQItem = ({ item, isOpen, onClick }: { item: any, isOpen: boolean, onClic
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <p className="pb-6 text-[#1A1A1A]/70 leading-relaxed font-medium max-w-2xl">
+            <p className="pb-6 text-brand-dark/70 leading-relaxed font-medium max-w-2xl">
               {item.answer}
             </p>
           </motion.div>
@@ -58,7 +58,7 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-24 bg-[#F3F0E6]">
+    <section className="py-24 bg-brand-beige">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-16">
@@ -74,7 +74,7 @@ const FAQ = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-serif font-black text-[#1A1A1A]"
+            className="text-4xl md:text-5xl font-serif font-black text-brand-dark"
           >
             Frequently Asked Questions
           </motion.h2>

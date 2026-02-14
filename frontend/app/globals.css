@@ -9,6 +9,13 @@
   --color-brand-primary: #0ea5e9;
   --color-brand-accent: #7c3aed;
 
+  /* Semantic Colors */
+  --color-bg-primary: var(--color-brand-beige);
+  --color-bg-card: #FFFFFF;
+  --color-text-primary: var(--color-brand-dark);
+  --color-text-secondary: #4A4A4A;
+  --color-text-muted: #6B6B6B;
+
   --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;

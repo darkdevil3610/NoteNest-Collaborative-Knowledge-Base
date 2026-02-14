@@ -69,7 +69,7 @@ const roadmapItems = [
 const LogoTicker = () => (
   <div className="w-full overflow-hidden border-y border-black/5 bg-white/50 backdrop-blur-sm py-8 mb-24">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <p className="text-center text-sm font-bold uppercase tracking-widest text-[#1A1A1A]/40 mb-8">
+      <p className="text-center text-sm font-bold uppercase tracking-widest text-brand-dark/40 mb-8">
         Trusted by forward-thinking teams
       </p>
       <div className="relative flex overflow-x-hidden group">
@@ -84,7 +84,7 @@ const LogoTicker = () => (
           }}
         >
           {[...companies, ...companies, ...companies, ...companies].map((company, i) => (
-            <span key={i} className="text-2xl font-serif font-bold text-[#1A1A1A]/20 uppercase tracking-tighter">
+            <span key={i} className="text-2xl font-serif font-bold text-brand-dark/20 uppercase tracking-tighter">
               {company}
             </span>
           ))}
@@ -102,19 +102,19 @@ const TestimonialCard = ({ data }: { data: typeof testimonials[0] }) => (
   <div className="min-w-[350px] md:min-w-[400px] bg-white p-8 rounded-3xl border border-black/5 shadow-sm mx-4 flex flex-col justify-between h-full hover:scale-[1.02] transition-transform duration-300">
     <div className="mb-6">
       <div className="flex gap-1 mb-4">
-        {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-[#FFD93D] text-[#FFD93D]" />)}
+        {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-[#FFD93D] text-brand-yellow" />)}
       </div>
-      <p className="text-lg font-medium text-[#1A1A1A] leading-relaxed">
+      <p className="text-lg font-medium text-brand-dark leading-relaxed">
         "{data.quote}"
       </p>
     </div>
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center font-bold text-sm">
+      <div className="w-10 h-10 rounded-full bg-brand-dark text-white flex items-center justify-center font-bold text-sm">
         {data.avatar}
       </div>
       <div>
-        <p className="text-sm font-bold text-[#1A1A1A]">{data.author}</p>
-        <p className="text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wide">{data.role}</p>
+        <p className="text-sm font-bold text-brand-dark">{data.author}</p>
+        <p className="text-xs font-medium text-brand-dark/50 uppercase tracking-wide">{data.role}</p>
       </div>
     </div>
   </div>
@@ -132,26 +132,26 @@ const RoadmapItem = ({ item, index }: { item: any, index: number }) => (
     <div className="absolute left-[19px] top-0 h-full w-[2px] bg-black/5 last:hidden" />
     
     {/* Node */}
-    <div className="absolute left-0 top-0 w-10 h-10 rounded-full border-4 border-[#F3F0E6] bg-white flex items-center justify-center text-[#1A1A1A] z-10 shadow-sm">
+    <div className="absolute left-0 top-0 w-10 h-10 rounded-full border-4 border-brand-beige bg-white flex items-center justify-center text-brand-dark z-10 shadow-sm">
       <item.icon className="w-4 h-4" />
     </div>
 
     <div className="bg-white rounded-2xl p-6 border border-black/5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-2">
-        <h4 className="text-xl font-serif font-bold text-[#1A1A1A]">{item.title}</h4>
-        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${item.status === 'In Progress' ? 'bg-[#FFD93D]/20 text-[#1A1A1A]' : 'bg-[#1A1A1A]/5 text-[#1A1A1A]/40'}`}>
+        <h4 className="text-xl font-serif font-bold text-brand-dark">{item.title}</h4>
+        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${item.status === 'In Progress' ? 'bg-brand-yellow/20 text-brand-dark' : 'bg-brand-dark/5 text-brand-dark/40'}`}>
           {item.status}
         </span>
       </div>
-      <p className="text-[#1A1A1A]/60 text-sm mb-4 font-medium">{item.description}</p>
+      <p className="text-brand-dark/60 text-sm mb-4 font-medium">{item.description}</p>
       
       {/* Progress Bar */}
-      <div className="w-full h-2 bg-[#F3F0E6] rounded-full overflow-hidden">
+      <div className="w-full h-2 bg-brand-beige rounded-full overflow-hidden">
         <motion.div 
           initial={{ width: 0 }}
           whileInView={{ width: `${item.progress}%` }}
           transition={{ duration: 1.5, ease: "easeOut", delay: index * 0.2 + 0.5 }}
-          className="h-full bg-[#1A1A1A] rounded-full relative"
+          className="h-full bg-brand-dark rounded-full relative"
         >
            <div className="absolute right-0 top-0 bottom-0 w-full animate-pulse bg-white/20" />
         </motion.div>
@@ -162,7 +162,7 @@ const RoadmapItem = ({ item, index }: { item: any, index: number }) => (
 
 const SocialProof = () => {
   return (
-    <section className="py-20 bg-[#F3F0E6] overflow-hidden">
+    <section className="py-20 bg-brand-beige overflow-hidden">
       
       <LogoTicker />
 
@@ -171,10 +171,10 @@ const SocialProof = () => {
         {/* Testimonials Marquee */}
         <div className="mb-32">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-serif font-black text-[#1A1A1A] mb-6">
+            <h2 className="text-4xl md:text-5xl font-serif font-black text-brand-dark mb-6">
               Loved by knowledge workers.
             </h2>
-             <p className="text-lg text-[#1A1A1A]/70 font-medium max-w-2xl mx-auto">
+             <p className="text-lg text-brand-dark/70 font-medium max-w-2xl mx-auto">
                Join thousands of teams who are documenting faster and collaborating better.
              </p>
           </div>
@@ -210,16 +210,16 @@ const SocialProof = () => {
             >
               The Future of NoteNest
             </motion.div>
-            <h2 className="text-4xl md:text-5xl font-serif font-black text-[#1A1A1A] mb-6 leading-tight">
+            <h2 className="text-4xl md:text-5xl font-serif font-black text-brand-dark mb-6 leading-tight">
               We're just getting <br/> 
-              <span className="relative inline-block text-[#FF6B6B]">
+              <span className="relative inline-block text-brand-accent">
                 started.
               </span>
             </h2>
-            <p className="text-lg text-[#1A1A1A]/70 font-medium leading-relaxed mb-8">
+            <p className="text-lg text-brand-dark/70 font-medium leading-relaxed mb-8">
               NoteNest is open-source and community driven. We're constantly shipping new features to help you write better.
             </p>
-            <div className="inline-flex items-center gap-2 text-[#1A1A1A] font-bold border-b-2 border-[#1A1A1A] pb-0.5 cursor-pointer hover:opacity-70 transition-opacity">
+            <div className="inline-flex items-center gap-2 text-brand-dark font-bold border-b-2 border-brand-dark pb-0.5 cursor-pointer hover:opacity-70 transition-opacity">
               View full roadmap <ArrowRight className="w-4 h-4" />
             </div>
           </div>
