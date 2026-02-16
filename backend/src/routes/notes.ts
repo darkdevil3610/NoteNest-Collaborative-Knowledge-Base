@@ -18,7 +18,7 @@ router.get('/workspace/:workspaceId', authenticateToken, validateAccessLink, req
     const { workspaceId } = req.params;
     const { folderId, tag, pinned } = req.query;
     const cacheService = getCacheService();
-    
+
     // Build query based on filters
     const query: any = { workspaceId };
     if (folderId) {
@@ -55,7 +55,7 @@ router.get('/workspace/:workspaceId', authenticateToken, validateAccessLink, req
 });
 
 // Get single note by ID
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticateToken, validateAccessLink, requirePermission('read'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const note = await Note.findById(id);
@@ -143,7 +143,7 @@ router.put('/:id', authenticateToken, requirePermission('write'), async (req: Au
       version: note.version + 1,
       updatedAt: new Date()
     };
-    
+
     if (title !== undefined) updateData.title = title;
     if (content !== undefined) updateData.content = content;
     if (folderId !== undefined) updateData.folderId = folderId;
@@ -490,13 +490,13 @@ router.post('/:id/merge', async (req: Request, res: Response) => {
 router.get('/workspace/:workspaceId/tags', authenticateToken, requirePermission('read'), async (req: AuthRequest, res: Response) => {
   try {
     const { workspaceId } = req.params;
-    
+
     // Get all unique tags from notes in the workspace
     const notes = await Note.distinct('tags', { workspaceId });
-    
+
     // Filter out null/undefined and flatten
     const tags = notes.filter(tag => tag !== null && tag !== undefined);
-    
+
     res.json(tags);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch tags' });
@@ -508,17 +508,17 @@ router.patch('/:id/pin', authenticateToken, requirePermission('write'), async (r
   try {
     const { id } = req.params;
     const { isPinned } = req.body;
-    
+
     const note = await Note.findByIdAndUpdate(
       id,
       { isPinned: isPinned, updatedAt: new Date() },
       { new: true }
     );
-    
+
     if (!note) {
       return res.status(404).json({ error: 'Note not found' });
     }
-    
+
     res.json(note);
   } catch (error) {
     res.status(500).json({ error: 'Failed to toggle pin status' });

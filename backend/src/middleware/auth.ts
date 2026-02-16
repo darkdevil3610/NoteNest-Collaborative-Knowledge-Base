@@ -12,6 +12,11 @@ export interface AuthRequest extends Request {
   effectivePermissions?: string[];
 }
 
+// Utility to escape regular expression special characters
+export const escapeRegExp = (string: string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 export const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -86,10 +91,11 @@ export const resolvePermissions = async (userId: string, resourcePath: string): 
   }
 
   // Get direct user permissions
+  const escapedResourcePath = escapeRegExp(resourcePath);
   const userPerms = await Permission.find({
     subjectId: userId,
     subjectType: 'user',
-    resourcePath: { $regex: `^${resourcePath}` }, // prefix match for inheritance
+    resourcePath: { $regex: `^${escapedResourcePath}` }, // prefix match for inheritance
     $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: new Date() } }]
   });
 
@@ -102,7 +108,7 @@ export const resolvePermissions = async (userId: string, resourcePath: string): 
       const groupPerms = await Permission.find({
         subjectId: groupId,
         subjectType: 'group',
-        resourcePath: { $regex: `^${resourcePath}` },
+        resourcePath: { $regex: `^${escapedResourcePath}` },
         $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: new Date() } }]
       });
       groupPerms.forEach(perm => permissions.push(...perm.permissions));

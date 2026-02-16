@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IFolder extends Document {
   name: string;
   workspaceId: string;
-  parentId?: string; // null for root folders
+  parentId?: string | null; // null for root folders
   path: string; // materialized path, e.g., "workspaceId/folderId1/folderId2/"
   createdBy: string; // user ID
   createdAt: Date;

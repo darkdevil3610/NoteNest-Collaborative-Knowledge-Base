@@ -21,13 +21,13 @@ dotenv.config();
 // Validate required environment variables
 const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-if (missingVars.length > 0) {
+if (missingVars.length > 0 && process.env.NODE_ENV !== 'test') {
   console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
   console.error('Please create a .env file based on .env.example and set the required variables.');
   process.exit(1);
 }
 
-const app = express(); // Initialize express
+export const app = express(); // Initialize express
 
 app.use(cors());
 app.use(express.json());
@@ -35,21 +35,24 @@ app.use(express.json());
 // Add request logging middleware
 app.use(requestLoggingMiddleware);
 
-// Connect to MongoDB
-const MONGO_URI = process.env.MONGO_URI!;
-mongoose.connect(MONGO_URI)
-  .then(() => console.log("📊 Connected to MongoDB"))
-  .catch(err => console.error("MongoDB connection error:", err));
+// Initializations (only if not in test environment)
+if (process.env.NODE_ENV !== 'test') {
+  // Connect to MongoDB
+  const MONGO_URI = process.env.MONGO_URI!;
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log("📊 Connected to MongoDB"))
+    .catch(err => console.error("MongoDB connection error:", err));
 
-// Initialize Redis cache
-initializeCache().then(() => {
-  console.log("🔄 Redis cache initialized");
-}).catch((err: unknown) => {
-  console.warn("⚠️  Redis cache initialization failed, continuing without cache:", err instanceof Error ? err.message : String(err));
-});
+  // Initialize Redis cache
+  initializeCache().then(() => {
+    console.log("🔄 Redis cache initialized");
+  }).catch((err: unknown) => {
+    console.warn("⚠️  Redis cache initialization failed, continuing without cache:", err instanceof Error ? err.message : String(err));
+  });
 
-// Register event listeners
-registerEventListeners();
+  // Register event listeners
+  registerEventListeners();
+}
 
 // Routes
 app.use('/api/users', userRoutes);
@@ -69,11 +72,11 @@ app.post('/api/socket/token', authenticateToken, (req: Request, res: Response) =
 // Validation endpoints for socket service
 app.post('/api/workspaces/:workspaceId/validate-access', authenticateToken, async (req: Request, res: Response) => {
   const { workspaceId } = req.params;
-  const { userId } = req.body;
+  const userId = (req as any).user._id.toString();
 
   try {
     const workspace = await require('./models/Workspace').default.findById(workspaceId);
-    if (!workspace || !workspace.members.some((m: any) => m.userId === userId)) {
+    if (!workspace || (workspace.owner !== userId && !workspace.members.some((m: any) => m.userId === userId))) {
       return res.status(403).json({ error: 'Access denied' });
     }
     res.json({ valid: true });
@@ -84,7 +87,8 @@ app.post('/api/workspaces/:workspaceId/validate-access', authenticateToken, asyn
 
 app.post('/api/notes/:noteId/validate-update', authenticateToken, async (req: Request, res: Response) => {
   const { noteId } = req.params;
-  const { userId, expectedVersion } = req.body;
+  const { expectedVersion } = req.body;
+  const userId = (req as any).user._id.toString();
 
   try {
     const note = await require('./models/Note').default.findById(noteId);
@@ -93,7 +97,14 @@ app.post('/api/notes/:noteId/validate-update', authenticateToken, async (req: Re
     }
 
     const workspace = await require('./models/Workspace').default.findById(note.workspaceId);
-    const userRole = workspace?.members.find((m: any) => m.userId === userId)?.role;
+    const member = workspace?.members.find((m: any) => m.userId === userId);
+    const isOwner = workspace?.owner === userId;
+    const userRole = isOwner ? 'admin' : member?.role;
+
+    if (!isOwner && !member) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     if (userRole === "viewer") {
       return res.status(403).json({ error: 'Permission denied' });
     }
@@ -122,7 +133,8 @@ app.post('/api/notes/:noteId/validate-update', authenticateToken, async (req: Re
 
 app.post('/api/notes/:noteId/create-version', authenticateToken, async (req: Request, res: Response) => {
   const { noteId } = req.params;
-  const { authorId, reason } = req.body;
+  const { reason } = req.body;
+  const authorId = (req as any).user._id.toString();
 
   try {
     const note = await require('./models/Note').default.findById(noteId);
@@ -142,10 +154,11 @@ app.post('/api/notes/:noteId/create-version', authenticateToken, async (req: Req
 app.post('/api/audit/log', authenticateToken, async (req: Request, res: Response) => {
   const auditData = req.body;
   try {
+    const userId = (req as any).user._id.toString();
     const AuditService = require('./services/auditService').AuditService;
     await AuditService.logEvent(
       auditData.action,
-      auditData.userId,
+      userId,
       auditData.workspaceId,
       auditData.resourceId,
       auditData.resourceType,
@@ -215,8 +228,9 @@ app.get("/notes", async (_req: Request, res: Response) => {
   res.json(notes);
 });
 
-const PORT = process.env.PORT || 5001;
-
-app.listen(PORT, () => {
-  console.log(`📘 NoteNest backend running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 5001;
+  app.listen(PORT, () => {
+    console.log(`📘 NoteNest backend running on http://localhost:${PORT}`);
+  });
+}

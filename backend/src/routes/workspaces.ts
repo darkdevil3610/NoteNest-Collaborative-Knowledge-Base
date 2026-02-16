@@ -62,12 +62,20 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // Add member to workspace
-router.post('/:id/members', authenticateToken, async (req: Request, res: Response) => {
+router.post('/:id/members', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, role, addedBy } = req.body;
+    const { userId, role } = req.body;
     const workspace = await Workspace.findById(req.params.id);
     if (!workspace) {
       return res.status(404).json({ error: 'Workspace not found' });
+    }
+
+    // Check permissions: owner or admin
+    const isOwner = workspace.owner === req.user!._id.toString();
+    const member = workspace.members.find(m => m.userId === req.user!._id.toString());
+    const isAdmin = member?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
     // Check if user is already a member
@@ -84,11 +92,11 @@ router.post('/:id/members', authenticateToken, async (req: Request, res: Respons
     const event: MemberAddedToWorkspaceEvent = {
       type: EVENT_NAMES.MEMBER_ADDED_TO_WORKSPACE,
       timestamp: new Date(),
-      actorId: addedBy,
+      actorId: req.user!._id.toString(),
       workspaceId: workspace._id.toString(),
       userId,
       role,
-      addedBy,
+      addedBy: req.user!._id.toString(),
     };
     await eventBus.emit(EVENT_NAMES.MEMBER_ADDED_TO_WORKSPACE, event);
 

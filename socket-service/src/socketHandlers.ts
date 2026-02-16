@@ -18,16 +18,15 @@ export default function setupSocketHandlers(io: SocketIOServer) {
     io.use(async (socket: AuthenticatedSocket, next) => {
         const token = socket.handshake.auth.token;
         if (!token) {
-            return next(new Error("Authentication error"));
+            return next(new Error("Authentication error: Token required"));
         }
 
         try {
-            // TODO: Verify JWT token and extract userId
-            // For now, matching the previous logic: assuming token IS userId or verified elsewhere
-            socket.userId = token;
+            const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+            socket.userId = decoded.userId;
             next();
         } catch (error) {
-            next(new Error("Authentication error"));
+            next(new Error("Authentication error: Invalid or expired token"));
         }
     });
 
