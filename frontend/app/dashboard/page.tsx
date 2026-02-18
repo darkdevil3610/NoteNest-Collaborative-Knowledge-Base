@@ -23,6 +23,9 @@ export default function DashboardPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
 
+  // ✅ UPDATED last updated state (AUTO UPDATE)
+  const [lastUpdated, setLastUpdated] = useState("Just now");
+
   // ✅ NEW Recent Notes Mock Data
   const [recentNotes] = useState([
     { id: 1, title: "Project Plan", workspace: "Team", time: "2 hours ago" },
@@ -37,6 +40,21 @@ export default function DashboardPage() {
       setIsLoading(false);
     }, 800);
     return () => clearTimeout(timer);
+  }, []);
+
+  // ✅ NEW Auto Updating Time Logic (Does NOT affect other logic)
+  useEffect(() => {
+    const start = Date.now();
+
+    const interval = setInterval(() => {
+      const diff = Math.floor((Date.now() - start) / 1000);
+
+      if (diff < 60) setLastUpdated("Just now");
+      else if (diff < 120) setLastUpdated("1 min ago");
+      else setLastUpdated(`${Math.floor(diff / 60)} min ago`);
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const retryLoad = () => {
@@ -106,6 +124,34 @@ export default function DashboardPage() {
             }}
           >
             <div className="flex-1 min-w-0 flex flex-col gap-8 max-w-4xl mx-auto p-4 sm:p-6 md:p-8 relative z-10">
+
+              {/* ✅ Welcome Section */}
+              <section
+                className={sectionCardClass}
+                style={{ ...cardStyle, padding: "24px" }}
+              >
+                <h2
+                  className="text-xl font-semibold mb-2"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Welcome back!
+                </h2>
+
+                <p
+                  className="text-sm mb-3"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  This is your NoteNest dashboard. Get started by creating your first note
+                  and organizing your team's knowledge.
+                </p>
+
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  Last updated: {lastUpdated}
+                </p>
+              </section>
 
               {/* Quick Actions */}
               <section
