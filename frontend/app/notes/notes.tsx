@@ -239,12 +239,13 @@ export default function NotesPage() {
               <div className="flex justify-end gap-3">
                 {/* ✅ REQUIRED FIX */}
                 <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
+  type="button"
+  onClick={() => setShowCreateModal(false)}
+  className="btn-secondary"
+>
+  Cancel
+</button>
+
 
                 <button type="submit" className="btn-primary">
                   Create note
