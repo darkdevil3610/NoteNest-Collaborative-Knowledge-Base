@@ -14,40 +14,21 @@ export default function Sidebar() {
   const { activeWorkspace } = useWorkspace();
 
   const linkBase =
-    "block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
+    "block rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 text-white hover:bg-gray-700 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500";
 
-  // ✅ ACTIVE LINK (Dark Safe)
-  const linkActive = {
-    background: "rgba(59, 130, 246, 0.2)",
-    color: "#FFFFFF",
-  };
-
-  // ✅ INACTIVE LINK (White Text)
-  const linkInactive = {
-    color: "#E5E7EB",
-    opacity: 0.9,
-  };
+  const activeClass =
+    "bg-blue-600 text-white border-r-2 border-white";
 
   return (
     <aside
-      className="w-60 min-h-screen flex flex-col border-r shrink-0"
-      style={{
-        background: "#000000", // ✅ FULL BLACK SIDEBAR
-        borderColor: "rgba(255,255,255,0.08)",
-        color: "#FFFFFF",
-      }}
+      className="w-60 min-h-screen flex flex-col shrink-0 bg-gray-900 border-r border-gray-800 text-white"
       aria-label="Main navigation"
     >
       {/* HEADER */}
-      <header
-        className="p-5 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
-      >
+      <header className="p-5 border-b border-gray-800">
         <Link
           href="/"
-          className="font-bold text-xl tracking-tight hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-md px-2 py-1"
-          style={{ color: "#FFFFFF" }}
-          aria-label="NoteNest home page"
+          className="font-bold text-xl tracking-tight text-white hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md px-2 py-1"
         >
           NoteNest
         </Link>
@@ -61,12 +42,11 @@ export default function Sidebar() {
       >
         <Link
           href={`/workspace/${activeWorkspace.id}`}
-          className={`${linkBase} flex items-center gap-2`}
-          style={
+          className={`${linkBase} flex items-center gap-2 ${
             pathname === `/workspace/${activeWorkspace.id}`
-              ? linkActive
-              : linkInactive
-          }
+              ? activeClass
+              : ""
+          }`}
         >
           <svg
             className="w-4 h-4 shrink-0"
@@ -86,24 +66,22 @@ export default function Sidebar() {
 
         <Link
           href={`/workspace/${activeWorkspace.id}/dashboard`}
-          className={linkBase}
-          style={
+          className={`${linkBase} ${
             pathname === `/workspace/${activeWorkspace.id}/dashboard`
-              ? linkActive
-              : linkInactive
-          }
+              ? activeClass
+              : ""
+          }`}
         >
           Dashboard
         </Link>
 
         <Link
           href={`/workspace/${activeWorkspace.id}/notes`}
-          className={linkBase}
-          style={
+          className={`${linkBase} ${
             pathname === `/workspace/${activeWorkspace.id}/notes`
-              ? linkActive
-              : linkInactive
-          }
+              ? activeClass
+              : ""
+          }`}
         >
           Notes
         </Link>
@@ -111,8 +89,9 @@ export default function Sidebar() {
         {canAccessManagement && (
           <Link
             href="/management"
-            className={`${linkBase} flex items-center gap-2`}
-            style={pathname === "/management" ? linkActive : linkInactive}
+            className={`${linkBase} flex items-center gap-2 ${
+              pathname === "/management" ? activeClass : ""
+            }`}
           >
             <svg
               className="w-4 h-4 shrink-0"
@@ -133,15 +112,11 @@ export default function Sidebar() {
       </nav>
 
       {/* FOOTER */}
-      <footer
-        className="p-4 border-t flex flex-col items-center gap-3"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
-      >
+      <footer className="p-4 border-t border-gray-800 flex flex-col items-center gap-3">
         <div className="w-full">
           <label
             htmlFor="role-select"
-            className="block text-sm mb-1"
-            style={{ color: "#BBBBBB" }}
+            className="block text-sm mb-1 text-gray-300"
           >
             Role (for testing)
           </label>
@@ -150,12 +125,7 @@ export default function Sidebar() {
             id="role-select"
             value={role}
             onChange={(e) => setRole(e.target.value as UserRole)}
-            className="w-full rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{
-              borderColor: "rgba(255,255,255,0.15)",
-              color: "#FFFFFF",
-              background: "#111111",
-            }}
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 text-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="viewer">Viewer</option>
             <option value="editor">Editor</option>
@@ -163,14 +133,7 @@ export default function Sidebar() {
           </select>
         </div>
 
-        {/* Avatar */}
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
-          style={{
-            background: "#2563EB",
-            color: "#FFFFFF",
-          }}
-        >
+        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 bg-blue-600 text-white">
           N
         </div>
       </footer>
