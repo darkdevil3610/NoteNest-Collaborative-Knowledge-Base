@@ -199,11 +199,12 @@ setTimeout(() => {
             ) : notes.length === 0 ? (
               <EmptyState
                 title="No notes yet"
-                description={
-                  isViewer
-                    ? "You can view notes only."
-                    : "Get started by creating your first note."
-                }
+               description={
+  isViewer
+    ? "You don’t have permission to create notes, but you can view existing ones."
+    : "You don’t have any notes yet. Create your first note to get started."
+}
+
                 action={
                   canCreateNote && (
                     <button
@@ -244,7 +245,19 @@ setTimeout(() => {
           className="fixed inset-0 bg-black/50 flex items-center justify-center"
         >
 
-          <div className="bg-white p-6 rounded w-full max-w-md">
+<div className="relative bg-white p-6 rounded w-full max-w-md">
+  <button
+  type="button"
+  onClick={() => {
+    setShowCreateModal(false);
+    createButtonRef.current?.focus();
+  }}
+  aria-label="Close dialog"
+  className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+>
+  ✕
+</button>
+
             <h2
               id="new-note-title"
               className="text-xl font-semibold mb-4"
