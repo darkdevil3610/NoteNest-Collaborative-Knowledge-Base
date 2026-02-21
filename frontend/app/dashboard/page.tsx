@@ -7,10 +7,7 @@ import Header from "@/components/Header";
 import { usePermissions } from "@/hooks/usePermissions";
 import RouteGuard from "@/components/RouteGuard";
 
-const CREATE_RESTRICTED_TITLE =
-  "You need Editor or Admin role to create notes.";
-
-/* ✅ Time Ago Formatter */
+/* -------- Time Ago Helper -------- */
 function getTimeAgo(value: string | number | undefined) {
   if (!value) return "Recently";
 
@@ -33,6 +30,7 @@ function getTimeAgo(value: string | number | undefined) {
   return `${days} days ago`;
 }
 
+/* -------- Safe LocalStorage Read -------- */
 function loadNotesSafely() {
   if (typeof window === "undefined") return [];
 
@@ -42,107 +40,69 @@ function loadNotesSafely() {
 
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.warn("Invalid notes data in localStorage", error);
+  } catch {
     return [];
   }
 }
 
 export default function DashboardPage() {
-const permissions = usePermissions();
-const canCreateNote = Boolean(permissions?.canCreateNote);
-const [notes, setNotes] = useState<any[]>([]);
-const recentNotes = notes
-  .slice()
-  .sort(
-    (a, b) =>
-      new Date(b.createdAt).getTime() -
-      new Date(a.createdAt).getTime()
-  )
-  .slice(0, 5);
-  /* ✅ Badge Color Logic (NEW) */
-  const getWorkspaceBadgeClass = (workspace: string) => {
-    switch (workspace) {
-      case "Team":
-        return "bg-purple-500/10 text-purple-400";
-      case "Personal":
-        return "bg-blue-500/10 text-blue-400";
-      case "Product":
-        return "bg-green-500/10 text-green-400";
-      default:
-        return "bg-gray-500/10 text-gray-400";
-    }
-  };
+  const { canCreateNote } = usePermissions();
+  const [notes, setNotes] = useState<any[]>([]);
 
-  /* ✅ UPDATED — Use timestamps instead of text */
- 
+  /* Load notes safely */
   useEffect(() => {
-    document.body.style.background = "#000";
-    document.documentElement.style.background = "#000";
+    setNotes(loadNotesSafely());
   }, []);
 
-  const cardStyle = {
-    background: "#0b0b0b",
-    border: "1px solid #1f1f1f",
-    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.9)",
-  };
-useEffect(() => {
-  const safeNotes = loadNotesSafely();
-  setNotes(safeNotes);
-}, []);
+  /* Recent notes (latest 5) */
+  const recentNotes = [...notes]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    )
+    .slice(0, 5);
 
   return (
-  
-      <div style={{ background: "#000", minHeight: "100vh", display: "flex" }}>
+    <RouteGuard requireAuth>
+      <div className="flex min-h-screen bg-black">
         <Sidebar />
 
-        <div style={{ flex: 1, background: "#000" }}>
+        <div className="flex-1 flex flex-col min-w-0">
           <Header title="Dashboard" showSearch />
 
-          <main style={{ background: "#000", minHeight: "100vh", padding: 32 }}>
-            <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <main className="flex-1 overflow-auto p-6">
+            <div className="max-w-4xl mx-auto space-y-8">
 
-              {/* Welcome Section */}
-              <section
-                style={{ ...cardStyle, padding: "24px", borderRadius: 16 }}
-              >
-                <h2
-                  className="text-xl font-semibold mb-2"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
+              {/* Welcome */}
+              <section className="bg-[#0b0b0b] border border-[#1f1f1f] rounded-2xl p-6">
+                <h2 className="text-2xl font-semibold text-white mb-2">
                   Welcome back!
                 </h2>
-
-                <p
-                  className="text-sm mb-3"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  This is your NoteNest dashboard. Get started by creating your
-                  first note and organizing your team's knowledge.
+                <p className="text-gray-400">
+                  Manage and organize your notes from one place.
                 </p>
               </section>
 
               {/* Quick Actions */}
-              <section style={{ ...cardStyle, borderRadius: 16, marginTop: 24 }}>
-                <div style={{ padding: 20, borderBottom: "1px solid #222" }}>
-                  <h3 style={{ color: "#fff" }}>Quick Actions</h3>
-                </div>
+              <section className="bg-[#0b0b0b] border border-[#1f1f1f] rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Quick Actions
+                </h3>
 
-                <div style={{ padding: 20, display: "flex", gap: 12 }}>
+                <div className="flex gap-4">
                   {canCreateNote && (
-                    <Link href="/notes?new=1" className="btn-primary">
-                      Create Note
+                    <Link
+                      href="/notes?new=1"
+                      className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                    >
+                      + Create Note
                     </Link>
                   )}
 
                   <Link
                     href="/notes"
-                    style={{
-                      border: "1px solid #333",
-                      color: "#fff",
-                      padding: "8px 16px",
-                      borderRadius: 8,
-                    }}
+                    className="px-5 py-2 rounded-lg border border-gray-700 text-white hover:bg-gray-800"
                   >
                     View All Notes
                   </Link>
@@ -150,99 +110,48 @@ useEffect(() => {
               </section>
 
               {/* Recent Notes */}
-              <section
-                style={{
-                  ...cardStyle,
-                  borderRadius: 16,
-                  marginTop: 32,
-                }}
-              >
-                <div style={{ padding: 20, borderBottom: "1px solid #222" }}>
-                  <h3
-                    style={{
-                      color: "#e5e7eb",
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
+              <section className="bg-[#0b0b0b] border border-[#1f1f1f] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">
                     Recent Notes
-                    <span
-                      style={{
-                        background: "rgba(167, 139, 250, 0.15)",
-                        color: "#a78bfa",
-                        padding: "2px 8px",
-                        borderRadius: 999,
-                        fontSize: 12,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {recentNotes.length}
-                    </span>
                   </h3>
+                  <span className="text-sm text-gray-400">
+                    {recentNotes.length}
+                  </span>
                 </div>
 
-                <div style={{ padding: 20 }}>
-                  {recentNotes.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                      <div className="text-2xl mb-3">📝</div>
-                      <div className="text-lg font-medium mb-1">
-                        No recent notes
-                      </div>
-                      <div className="text-sm">
-                        Start by creating your first note.
-                      </div>
-
-                      {canCreateNote && (
-                        <Link
-                          href="/notes?new=1"
-                          className="mt-4 px-4 py-2 rounded-md bg-purple-600 hover:bg-purple-700 text-white text-sm transition"
-                        >
-                          Create Note
-                        </Link>
-                      )}
-                    </div>
-                  ) : (
-                    recentNotes.map((note) => (
+                {recentNotes.length === 0 ? (
+                  <div className="text-gray-400 text-center py-10">
+                    No recent notes found.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentNotes.map((note) => (
                       <div
                         key={note.id}
-                        className="
-                          transition-all duration-200 ease-in-out
-                          hover:scale-[1.02]
-                          hover:shadow-lg
-                          hover:border-gray-500/40
-                          cursor-pointer
-                        "
-                        style={{
-                          padding: 16,
-                          border: "1px solid #222",
-                          borderRadius: 12,
-                          marginBottom: 12,
-                          background: "#0f0f0f",
-                        }}
+                        className="border border-gray-800 rounded-xl p-4 bg-[#0f0f0f]"
                       >
-                        <div style={{ color: "#fff", fontWeight: 600 }}>
+                        <div className="text-white font-semibold">
                           {note.title}
                         </div>
 
-                       <div className="text-sm font-medium text-gray-400">
-  {note.workspace ?? "Personal"}
-</div>
+                        <div className="text-sm text-gray-400 mt-1">
+                          {note.workspace ?? "Personal"}
+                        </div>
 
-                        <div style={{ color: "#666", fontSize: 12 }}>
+                        <div className="text-xs text-gray-500 mt-2">
                           {getTimeAgo(note.createdAt)}
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
             </div>
           </main>
         </div>
       </div>
-   
+    </RouteGuard>
   );
 }
