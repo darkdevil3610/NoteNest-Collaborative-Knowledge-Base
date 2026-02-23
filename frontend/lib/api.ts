@@ -241,15 +241,32 @@ class ApiService {
     });
   }
 
+  async pinNote(id: string, isPinned: boolean): Promise<Note> {
+    return this.request(`/api/notes/${id}/pin`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPinned }),
+    });
+  }
+
   async getNoteVersions(noteId: string): Promise<NoteVersion[]> {
     return this.request(`/api/notes/${noteId}/versions`);
   }
 
-  async getNoteDiff(noteId: string, version1Id: string | number, version2Id: string | number): Promise<NoteDiff> {
-    return this.request(`/api/notes/${noteId}/diff?v1=${version1Id}&v2=${version2Id}`);
+  async getNoteDiff(
+    noteId: string,
+    version1: string | number,
+    version2: string | number
+  ): Promise<NoteDiff> {
+    return this.request(
+      `/api/notes/${noteId}/diff?v1=${version1}&v2=${version2}`
+    );
   }
 
-  async restoreNoteVersion(noteId: string, versionNumber: number | string, authorId: string): Promise<RestoreNoteResponse> {
+  async restoreNoteVersion(
+    noteId: string,
+    versionNumber: number | string,
+    authorId: string
+  ): Promise<RestoreNoteResponse> {
     return this.request(`/api/notes/${noteId}/restore`, {
       method: "POST",
       body: JSON.stringify({ versionNumber, authorId }),
@@ -270,38 +287,93 @@ class ApiService {
     });
   }
 
+  /* ---------- Tags & Folders ---------- */
   async getWorkspaceTags(workspaceId: string): Promise<string[]> {
-    return this.request(`/api/workspaces/${workspaceId}/tags`);
+    return this.request(`/api/notes/workspace/${workspaceId}/tags`);
   }
 
   async getFolders(workspaceId: string): Promise<Folder[]> {
     return this.request(`/api/workspaces/${workspaceId}/folders`);
   }
 
-  /* ---------- Users ---------- */
-  async register(
-    email: string,
-    password: string,
-    name: string
-  ): Promise<{ userId: string; message: string }> {
-    return this.request("/api/users/register", {
+  /* ---------- Authentication ---------- */
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    return this.request("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify(data),
     });
   }
 
-  async login(
-    email: string,
-    password: string
-  ): Promise<{ token: string; user: User }> {
-    return this.request("/api/users/login", {
+  async login(data: LoginRequest): Promise<LoginResponse> {
+    return this.request("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(data),
     });
   }
 
-  async getUser(id: string): Promise<User> {
-    return this.request(`/api/users/${id}`);
+  async getProfile(): Promise<UserProfileResponse> {
+    return this.request("/api/auth/profile");
+  }
+
+  /* ---------- Notifications ---------- */
+  async getNotifications(
+    workspaceId?: string,
+    limit: number = 20,
+    skip: number = 0
+  ): Promise<{ notifications: any[]; total: number; unreadCount: number }> {
+    const params = new URLSearchParams();
+    if (workspaceId) params.append("workspaceId", workspaceId);
+    params.append("limit", limit.toString());
+    params.append("skip", skip.toString());
+    return this.request(`/api/notifications?${params.toString()}`);
+  }
+
+  async getUnreadNotificationCount(): Promise<{ unreadCount: number }> {
+    return this.request("/api/notifications/count");
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<any> {
+    return this.request(`/api/notifications/${notificationId}/read`, {
+      method: "PATCH",
+    });
+  }
+
+  async dismissNotification(
+    notificationId: string
+  ): Promise<{ message: string }> {
+    return this.request(`/api/notifications/${notificationId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async markAllNotificationsAsRead(
+    workspaceId?: string
+  ): Promise<{ message: string; modifiedCount: number }> {
+    return this.request("/api/notifications/read-all", {
+      method: "PATCH",
+      body: JSON.stringify({ workspaceId }),
+    });
+  }
+
+  /* ---------- Activity Feed ---------- */
+  async getWorkspaceActivity(
+    workspaceId: string,
+    limit: number = 30,
+    skip: number = 0
+  ): Promise<{ activities: any[]; total: number }> {
+    return this.request(
+      `/api/activities/workspace/${workspaceId}?limit=${limit}&skip=${skip}`
+    );
+  }
+
+  async getNoteActivity(
+    noteId: string,
+    limit: number = 20,
+    skip: number = 0
+  ): Promise<{ activities: any[]; total: number }> {
+    return this.request(
+      `/api/activities/note/${noteId}?limit=${limit}&skip=${skip}`
+    );
   }
 }
 
