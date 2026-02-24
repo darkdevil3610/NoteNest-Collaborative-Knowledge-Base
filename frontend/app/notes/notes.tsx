@@ -58,7 +58,6 @@ export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pinnedNoteIds, setPinnedNoteIds] = useState<number[]>([]);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] =
     useState<"newest" | "oldest" | "az">("newest");
@@ -76,23 +75,62 @@ export default function NotesPage() {
   const [recentlyDeleted, setRecentlyDeleted] = useState<Note | null>(null);
   const [showUndoToast, setShowUndoToast] = useState(false);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const pinnedOnly = searchParams.get("pinned") === "1";
   const createButtonRef = useRef<HTMLButtonElement>(null);
+  const [pinnedPreviewNotes, setPinnedPreviewNotes] = useState<
+    Array<{ id: number; title: string }>
+  >([]);
+  const [totalNotes, setTotalNotes] = useState(0);
+  const [pinnedNotes, setPinnedNotes] = useState(0);
+const [pinsHydrated, setPinsHydrated] = useState(false);
+  /* ---------- Load note stats ---------- */
+  const loadNoteStats = () => {
+    try {
+      const rawNotes = localStorage.getItem("notenest-notes");
+      const rawPinned = localStorage.getItem("notenest-pinned-notes");
+
+      const notes = rawNotes ? JSON.parse(rawNotes) : [];
+      const pinned = rawPinned ? JSON.parse(rawPinned) : [];
+
+      setTotalNotes(Array.isArray(notes) ? notes.length : 0);
+      setPinnedNotes(Array.isArray(pinned) ? pinned.length : 0);
+
+      const preview = notes
+        .filter((note: any) => pinned.includes(note.id))
+        .slice(0, 3)
+        .map((note: any) => ({
+          id: note.id,
+          title: note.title,
+        }));
+
+      setPinnedPreviewNotes(preview);
+    } catch {
+      setTotalNotes(0);
+      setPinnedNotes(0);
+      setPinnedPreviewNotes([]);
+    }
+  };
 
   /* ---------- Initial load ---------- */
   useEffect(() => {
-    const stored = loadNotesFromStorage();
-    setNotes(stored);
+  // Load notes
+  const stored = loadNotesFromStorage();
+  setNotes(stored);
 
-    const rawPinned = localStorage.getItem(PINNED_KEY);
-    if (rawPinned) {
-      try {
-        setPinnedNoteIds(JSON.parse(rawPinned));
-      } catch { }
-    }
+  // Load pinned notes
+  const rawPinned = localStorage.getItem(PINNED_KEY);
+if (rawPinned) {
+  try {
+    const parsed = JSON.parse(rawPinned);
+    // 🔑 convert all pinned IDs to numbers
+    setPinnedNoteIds(parsed.map((id: any) => Number(id)));
+  } catch {}
+}
 
-    setIsLoading(false);
-  }, []);
+  // Mark loading complete
+  setIsLoading(false);
+}, []);
+  
   /* ---------- Sync search ---------- */
   useEffect(() => {
     setSearchQuery(search);
@@ -132,15 +170,21 @@ export default function NotesPage() {
   }, [createTitle, createContent, showCreateModal]);
 
   /* ---------- Filter & sort ---------- */
-  const filteredNotes = notes.filter((note) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      note.title.toLowerCase().includes(q) ||
-      note.content?.toLowerCase().includes(q)
-    );
-  });
+ const filteredNotes = notes.filter((note) => {
+  // ✅ pinned-only view
+  if (pinnedOnly) {
+    return pinnedNoteIds.includes(note.id);
+  }
 
+  // 🔍 normal search view
+  if (!searchQuery.trim()) return true;
+
+  const q = searchQuery.toLowerCase();
+  return (
+    note.title.toLowerCase().includes(q) ||
+    note.content?.toLowerCase().includes(q)
+  );
+});
   const sortedNotes = [...filteredNotes].sort((a, b) => {
     const aPinned = pinnedNoteIds.includes(a.id);
     const bPinned = pinnedNoteIds.includes(b.id);
@@ -218,19 +262,15 @@ export default function NotesPage() {
   /* ---------- Delete with undo ---------- */
   const handleDeleteNote = (note: Note) => {
     setNotes((prev) => prev.filter((n) => n.id !== note.id));
+
+    // ✅ ADD THIS (keeps pinned storage in sync)
+    setPinnedNoteIds((prev) =>
+      prev.filter((id) => id !== note.id)
+    );
+
     setRecentlyDeleted(note);
     setShowUndoToast(true);
-
-    if (deleteTimeoutRef.current) {
-      clearTimeout(deleteTimeoutRef.current);
-    }
-
-    deleteTimeoutRef.current = setTimeout(() => {
-      setRecentlyDeleted(null);
-      setShowUndoToast(false);
-    }, 5000);
   };
-
   /* ---------- Bulk select ---------- */
   const toggleSelectNote = (id: number) => {
     setSelectedNoteIds((prev) =>
@@ -241,13 +281,13 @@ export default function NotesPage() {
   };
 
   const toggleSelectionMode = () => {
-  setIsSelectionMode((prev) => {
-    if (prev) {
-      setSelectedNoteIds([]); // clear selections when exiting
-    }
-    return !prev;
-  });
-};
+    setIsSelectionMode((prev) => {
+      if (prev) {
+        setSelectedNoteIds([]); // clear selections when exiting
+      }
+      return !prev;
+    });
+  };
 
   /* ---------- Delete with undo ---------- */
   const handleBulkDelete = () => {
@@ -301,54 +341,62 @@ export default function NotesPage() {
           <main className="flex-1 overflow-y-auto">
             <div className="max-w-3xl mx-auto p-6">
               <div className="mb-4 flex justify-end gap-2">
-  {!isViewer && (
- <button
-  onClick={toggleSelectionMode}
-  title={
-    isSelectionMode
-      ? "Exit selection mode"
-      : "Select multiple notes to delete at once"
-  }
-  className="border px-4 py-2 rounded"
->
-  {isSelectionMode ? "Cancel selection" : "Select notes"}
-</button>
-  )}
+                {!isViewer && (
+                  <button
+                    onClick={toggleSelectionMode}
+                    title={
+                      isSelectionMode
+                        ? "Exit selection mode"
+                        : "Select multiple notes to delete at once"
+                    }
+                    className="border px-4 py-2 rounded"
+                  >
+                    {isSelectionMode ? "Cancel selection" : "Select notes"}
+                  </button>
+                )}
 
-  {!isViewer && isSelectionMode && selectedNoteIds.length > 0 && (
-    <button
-      onClick={handleBulkDelete}
-      className="mb-4 px-4 py-2 bg-red-600 text-white rounded"
-    >
-      Delete selected ({selectedNoteIds.length})
-    </button>
-  )}
+                {!isViewer && isSelectionMode && selectedNoteIds.length > 0 && (
+                  <button
+                    onClick={handleBulkDelete}
+                    className="mb-4 px-4 py-2 bg-red-600 text-white rounded"
+                  >
+                    Delete selected ({selectedNoteIds.length})
+                  </button>
+                )}
 
-  <span className="text-sm text-gray-500">Sort by</span>
-  <select
-    value={sortBy}
-    onChange={(e) => setSortBy(e.target.value as any)}
-    className="border rounded px-3 py-2"
-  >
-    <option value="newest">Newest first</option>
-    <option value="oldest">Oldest first</option>
-    <option value="az">A–Z</option>
-  </select>
-</div>
+                <span className="text-sm text-gray-500">Sort by</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="border rounded px-3 py-2"
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="az">A–Z</option>
+                </select>
+              </div>
 
               {isLoading ? (
                 <SkeletonList count={4} />
               ) : sortedNotes.length === 0 ? (
                 <EmptyState
                   icon={searchQuery ? SearchIcon : FileX}
-                  title={searchQuery ? "No matching notes" : "No notes yet"}
+                  title={
+                    pinnedOnly
+                      ? "No pinned notes"
+                      : searchQuery
+                      ? "No matching notes"
+                      : "No notes yet"
+                  }
                   description={
-                    searchQuery
+                    pinnedOnly
+                      ? "You haven't pinned any notes yet."
+                      : searchQuery
                       ? `We couldn't find any notes matching "${searchQuery}".`
                       : "Start your knowledge base by creating your first note."
                   }
                   action={
-                    !searchQuery && canCreateNote ? (
+                    !searchQuery && !pinnedOnly && canCreateNote ? (
                       <button
                         onClick={handleCreateNote}
                         className="px-4 py-2 rounded-lg bg-black text-white font-medium hover:bg-stone-800 transition-colors"
@@ -361,20 +409,20 @@ export default function NotesPage() {
                 />
               ) : (
                 <ul className="space-y-3">
-                  {sortedNotes.map((note) => (
-                    <li
-                      key={note.id}
-                      className="border rounded-xl p-4 bg-white flex justify-between"
-                    >
-                      <div className="flex items-start gap-3">
-                       {!isViewer && isSelectionMode && (
-  <input
-    type="checkbox"
-    checked={selectedNoteIds.includes(note.id)}
-    onChange={() => toggleSelectNote(note.id)}
-    className="mt-1"
-  />
-)}
+    {sortedNotes.map((note) => (
+      <li
+        key={note.id}
+        className="border rounded-xl p-4 bg-white flex justify-between"
+      >
+        <div className="flex items-start gap-3">
+                        {!isViewer && isSelectionMode && (
+                          <input
+                            type="checkbox"
+                            checked={selectedNoteIds.includes(note.id)}
+                            onChange={() => toggleSelectNote(note.id)}
+                            className="mt-1"
+                          />
+                        )}
 
                         <div>
                           <h4 className="font-semibold">{note.title}</h4>
@@ -494,6 +542,10 @@ export default function NotesPage() {
           <button
             onClick={() => {
               setNotes((prev) => [...prev, recentlyDeleted]);
+
+              // ✅ keep pinned state consistent after undo
+              setPinnedNoteIds((prev) => [...prev]);
+
               if (deleteTimeoutRef.current) {
                 clearTimeout(deleteTimeoutRef.current);
               }

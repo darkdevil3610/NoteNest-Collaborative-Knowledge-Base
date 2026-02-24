@@ -5,6 +5,10 @@ import {
   NoteVersion,
   User,
   Folder,
+  Template,
+  TemplateCategory,
+  TemplateVisibility,
+  TemplatePlaceholder,
   CreateWorkspaceRequest,
   AddMemberRequest,
   UpdateMemberRoleRequest,
@@ -37,6 +41,10 @@ export type {
   NoteVersion,
   User,
   Folder,
+  Template,
+  TemplateCategory,
+  TemplateVisibility,
+  TemplatePlaceholder,
   CreateWorkspaceRequest,
   AddMemberRequest,
   UpdateMemberRoleRequest,
@@ -126,6 +134,21 @@ class ApiService {
     return response.json();
   }
 
+  /* ---------- Auth ---------- */
+  async login(email: string, password: string): Promise<LoginResponse> {
+    return this.request('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async register(email: string, password: string, name: string): Promise<RegisterResponse> {
+    return this.request('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    });
+  }
+
   /* ---------- Workspaces ---------- */
   async getWorkspacesForUser(userId: string): Promise<Workspace[]> {
     return this.request(`/api/workspaces/user/${userId}`);
@@ -184,33 +207,6 @@ class ApiService {
     );
   }
 
-  async getInviteDetails(token: string): Promise<any> {
-    return this.request(`/api/workspaces/invite/${token}`);
-  }
-
-  async acceptInvite(token: string): Promise<any> {
-    return this.request(`/api/workspaces/invite/${token}/accept`, {
-      method: "POST",
-    });
-  }
-
-  async getInvites(workspaceId: string): Promise<any[]> {
-    return this.request(`/api/workspaces/${workspaceId}/invites`);
-  }
-
-  async createInvite(workspaceId: string, email: string, role: string): Promise<any> {
-    return this.request(`/api/workspaces/${workspaceId}/invites`, {
-      method: "POST",
-      body: JSON.stringify({ email, role }),
-    });
-  }
-
-  async revokeInvite(workspaceId: string, inviteId: string): Promise<any> {
-    return this.request(`/api/workspaces/${workspaceId}/invites/${inviteId}`, {
-      method: "DELETE",
-    });
-  }
-
   /* ---------- Notes ---------- */
   async getNotesForWorkspace(workspaceId: string): Promise<Note[]> {
     return this.request(`/api/notes/workspace/${workspaceId}`);
@@ -218,6 +214,10 @@ class ApiService {
 
   async getNote(id: string): Promise<Note> {
     return this.request(`/api/notes/${id}`);
+  }
+
+  async getNoteVersions(noteId: string): Promise<NoteVersion[]> {
+    return this.request(`/api/notes/${noteId}/versions`);
   }
 
   async createNote(data: CreateNoteRequest): Promise<Note> {
@@ -241,6 +241,7 @@ class ApiService {
     });
   }
 
+
   async pinNote(id: string, isPinned: boolean): Promise<Note> {
     return this.request(`/api/notes/${id}/pin`, {
       method: "PATCH",
@@ -248,25 +249,11 @@ class ApiService {
     });
   }
 
-  async getNoteVersions(noteId: string): Promise<NoteVersion[]> {
-    return this.request(`/api/notes/${noteId}/versions`);
-  }
-
-  async getNoteDiff(
-    noteId: string,
-    version1: string | number,
-    version2: string | number
-  ): Promise<NoteDiff> {
-    return this.request(
-      `/api/notes/${noteId}/diff?v1=${version1}&v2=${version2}`
-    );
-  }
-
   async restoreNoteVersion(
     noteId: string,
-    versionNumber: number | string,
+    versionNumber: number,
     authorId: string
-  ): Promise<RestoreNoteResponse> {
+  ): Promise<{ note: Note }> {
     return this.request(`/api/notes/${noteId}/restore`, {
       method: "POST",
       body: JSON.stringify({ versionNumber, authorId }),
@@ -286,33 +273,66 @@ class ApiService {
       body: JSON.stringify(data),
     });
   }
+  /* ---------- Users ---------- */
 
-  /* ---------- Tags & Folders ---------- */
+  async getNoteDiff(
+    noteId: string,
+    version1: number,
+    version2: number
+  ): Promise<NoteDiff> {
+    return this.request(
+      `/api/notes/${noteId}/diff?v1=${version1}&v2=${version2}`
+    );
+  }
+
+  /* ---------- Tags ---------- */
   async getWorkspaceTags(workspaceId: string): Promise<string[]> {
     return this.request(`/api/notes/workspace/${workspaceId}/tags`);
   }
 
+  /* ---------- Folders ---------- */
   async getFolders(workspaceId: string): Promise<Folder[]> {
-    return this.request(`/api/workspaces/${workspaceId}/folders`);
+    return this.request(`/api/folders/workspace/${workspaceId}`);
   }
 
-  /* ---------- Authentication ---------- */
-  async register(data: RegisterRequest): Promise<RegisterResponse> {
-    return this.request("/api/auth/register", {
-      method: "POST",
+  async createFolder(data: { name: string; workspaceId: string; parentId?: string }): Promise<Folder> {
+    return this.request('/api/folders', {
+      method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async login(data: LoginRequest): Promise<LoginResponse> {
-    return this.request("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(data),
+  async deleteFolder(folderId: string): Promise<void> {
+    return this.request(`/api/folders/${folderId}`, { method: 'DELETE' });
+  }
+
+  /* ---------- Invites ---------- */
+  async getInvites(workspaceId: string): Promise<unknown[]> {
+    return this.request(`/api/workspaces/${workspaceId}/invites`);
+  }
+
+  async getInviteDetails(token: string): Promise<unknown> {
+    return this.request(`/api/invites/${token}`);
+  }
+
+  async createInvite(workspaceId: string, email: string, role: string): Promise<unknown> {
+    return this.request(`/api/workspaces/${workspaceId}/invites`, {
+      method: 'POST',
+      body: JSON.stringify({ email, role }),
     });
   }
 
-  async getProfile(): Promise<UserProfileResponse> {
-    return this.request("/api/auth/profile");
+  async revokeInvite(workspaceId: string, inviteId: string): Promise<unknown> {
+    return this.request(`/api/workspaces/${workspaceId}/invites/${inviteId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async acceptInvite(token: string): Promise<unknown> {
+    return this.request('/api/accept-invite', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
   }
 
   /* ---------- Notifications ---------- */
@@ -320,37 +340,33 @@ class ApiService {
     workspaceId?: string,
     limit: number = 20,
     skip: number = 0
-  ): Promise<{ notifications: any[]; total: number; unreadCount: number }> {
+  ): Promise<{ notifications: unknown[]; total: number; unreadCount: number }> {
     const params = new URLSearchParams();
-    if (workspaceId) params.append("workspaceId", workspaceId);
-    params.append("limit", limit.toString());
-    params.append("skip", skip.toString());
+    if (workspaceId) params.append('workspaceId', workspaceId);
+    params.append('limit', limit.toString());
+    params.append('skip', skip.toString());
     return this.request(`/api/notifications?${params.toString()}`);
   }
 
   async getUnreadNotificationCount(): Promise<{ unreadCount: number }> {
-    return this.request("/api/notifications/count");
+    return this.request('/api/notifications/count');
   }
 
-  async markNotificationAsRead(notificationId: string): Promise<any> {
+  async markNotificationAsRead(notificationId: string): Promise<unknown> {
     return this.request(`/api/notifications/${notificationId}/read`, {
-      method: "PATCH",
+      method: 'PATCH',
     });
   }
 
-  async dismissNotification(
-    notificationId: string
-  ): Promise<{ message: string }> {
+  async dismissNotification(notificationId: string): Promise<{ message: string }> {
     return this.request(`/api/notifications/${notificationId}`, {
-      method: "DELETE",
+      method: 'DELETE',
     });
   }
 
-  async markAllNotificationsAsRead(
-    workspaceId?: string
-  ): Promise<{ message: string; modifiedCount: number }> {
-    return this.request("/api/notifications/read-all", {
-      method: "PATCH",
+  async markAllNotificationsAsRead(workspaceId?: string): Promise<{ message: string; modifiedCount: number }> {
+    return this.request('/api/notifications/read-all', {
+      method: 'PATCH',
       body: JSON.stringify({ workspaceId }),
     });
   }
@@ -360,7 +376,7 @@ class ApiService {
     workspaceId: string,
     limit: number = 30,
     skip: number = 0
-  ): Promise<{ activities: any[]; total: number }> {
+  ): Promise<{ activities: unknown[]; total: number }> {
     return this.request(
       `/api/activities/workspace/${workspaceId}?limit=${limit}&skip=${skip}`
     );
@@ -370,10 +386,75 @@ class ApiService {
     noteId: string,
     limit: number = 20,
     skip: number = 0
-  ): Promise<{ activities: any[]; total: number }> {
+  ): Promise<{ activities: unknown[]; total: number }> {
     return this.request(
       `/api/activities/note/${noteId}?limit=${limit}&skip=${skip}`
     );
+  }
+  /* ---------- Templates ---------- */
+  async getBuiltInTemplates(): Promise<{ templates: Template[] }> {
+    return this.request('/api/templates/builtin');
+  }
+
+  async getWorkspaceTemplates(
+    workspaceId: string,
+    params?: { category?: string; tags?: string; search?: string; visibility?: string }
+  ): Promise<{ templates: Template[] }> {
+    const q = new URLSearchParams(params as Record<string, string> || {}).toString();
+    return this.request(`/api/templates/workspace/${workspaceId}${q ? `?${q}` : ''}`);
+  }
+
+  async getTemplate(id: string): Promise<{ template: Template }> {
+    return this.request(`/api/templates/${id}`);
+  }
+
+  async createTemplate(
+    workspaceId: string,
+    data: Omit<Partial<Template>, '_id' | 'usageCount' | 'isBuiltIn' | 'version'>
+  ): Promise<{ template: Template }> {
+    return this.request(`/api/templates/workspace/${workspaceId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateTemplate(
+    id: string,
+    data: Partial<Template>
+  ): Promise<{ template: Template }> {
+    return this.request(`/api/templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteTemplate(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.request(`/api/templates/${id}`, { method: 'DELETE' });
+  }
+
+  async copyTemplate(
+    id: string,
+    targetWorkspaceId?: string,
+    visibility?: string
+  ): Promise<{ template: Template }> {
+    return this.request(`/api/templates/${id}/copy`, {
+      method: 'POST',
+      body: JSON.stringify({ targetWorkspaceId, visibility }),
+    });
+  }
+
+  async useTemplate(
+    id: string,
+    values: Record<string, string>
+  ): Promise<{ title: string; body: string }> {
+    return this.request(`/api/templates/${id}/use`, {
+      method: 'POST',
+      body: JSON.stringify({ values }),
+    });
+  }
+
+  async seedBuiltInTemplates(workspaceId: string): Promise<{ seeded: number; total: number }> {
+    return this.request(`/api/templates/seed/${workspaceId}`, { method: 'POST' });
   }
 }
 
